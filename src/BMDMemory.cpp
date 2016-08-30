@@ -250,6 +250,9 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             memcpy(sharedMemory->videoData + offset, &timestamp, sizeof(timestamp));
             offset += sizeof(timestamp);
 
+            memcpy(sharedMemory->videoData + offset, &duration, sizeof(timestamp));
+            offset += sizeof(duration);
+
             memcpy(sharedMemory->videoData + offset, &frameWidth, sizeof(frameWidth));
             offset += sizeof(frameWidth);
 
