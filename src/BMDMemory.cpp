@@ -19,9 +19,20 @@ BMDMemory::~BMDMemory()
     if (deckLinkInput) deckLinkInput->Release();
     if (deckLink) deckLink->Release();
 
-    if (sem_destroy(&sharedMemory->sem) == -1)
+    if (sharedMemoryFd)
     {
-        std::cerr << "Failed to destroy semaphore\n";
+        if (close(sharedMemoryFd) == -1)
+        {
+            std::cerr << "Failed to close shared memory file descriptor\n";
+        }
+    }
+
+    if (sem != SEM_FAILED)
+    {
+        if (sem_close(sem) == -1)
+        {
+            std::cerr << "Failed to destroy semaphore\n";
+        }
     }
 
     if (sharedMemory == MAP_FAILED)
@@ -32,12 +43,9 @@ BMDMemory::~BMDMemory()
         }
     }
 
-    if (sharedMemoryFd)
+    if (shm_unlink(name.c_str()) == -1)
     {
-        if (shm_unlink(name.c_str()) == -1)
-        {
-            std::cerr << "Failed to delete shared memory\n";
-        }
+        std::cerr << "Failed to delete shared memory\n";
     }
 }
 
@@ -65,9 +73,11 @@ bool BMDMemory::run(int32_t videoMode)
         return false;
     }
 
-    if (sem_init(&sharedMemory->sem, 1, 1) == -1)
+    std::string semName = name + "_sem";
+
+    if ((sem = sem_open(semName.c_str(), O_CREAT, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED)
     {
-        std::cerr << "Failed to initialize semaphore\n";
+        std::cerr << "Failed to initialize semaphore " << errno << "\n";
         return false;
     }
 
@@ -219,7 +229,7 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         }
         else
         {
-            sem_wait(&sharedMemory->sem);
+            sem_wait(sem);
 
             BMDTimeValue duration;
 
@@ -247,13 +257,13 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             memcpy(sharedMemory->videoData + offset, frameData, dataSize);
             offset += sizeof(timestamp);
 
-            sem_post(&sharedMemory->sem);
+            sem_post(sem);
         }
     }
 
     if (audioFrame)
     {
-        sem_wait(&sharedMemory->sem);
+        sem_wait(sem);
 
         uint8_t* frameData;
 
@@ -275,7 +285,7 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         memcpy(sharedMemory->audioData + offset, frameData, dataSize);
         offset += sizeof(timestamp);
 
-        sem_post(&sharedMemory->sem);
+        sem_post(sem);
     }
 
     return S_OK;
@@ -283,7 +293,7 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
 void BMDMemory::writeMetaData()
 {
-    sem_wait(&sharedMemory->sem);
+    sem_wait(sem);
 
     uint32_t offset = 0;
 
@@ -311,5 +321,5 @@ void BMDMemory::writeMetaData()
     memcpy(sharedMemory->metaData + offset, &audioChannels, sizeof(audioChannels));
     offset += sizeof(audioChannels);
 
-    sem_post(&sharedMemory->sem);
+    sem_post(sem);
 }

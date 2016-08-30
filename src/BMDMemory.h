@@ -28,11 +28,12 @@ protected:
 
     struct Memory
     {
-        sem_t sem;
         uint8_t metaData[128];
         uint8_t videoData[1024 * 1024 * 40]; // 40MiB
         uint8_t audioData[1024 * 1024 * 40]; // 40MiB
     };
+
+    sem_t* sem = SEM_FAILED;
 
     std::string name;
     int sharedMemoryFd = -1;
