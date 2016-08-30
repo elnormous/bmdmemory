@@ -9,6 +9,7 @@
 BMDMemory::BMDMemory(const std::string& pName):
     name(pName)
 {
+    semName = name + "_sem";
 }
 
 BMDMemory::~BMDMemory()
@@ -19,19 +20,24 @@ BMDMemory::~BMDMemory()
     if (deckLinkInput) deckLinkInput->Release();
     if (deckLink) deckLink->Release();
 
-    if (sharedMemoryFd)
-    {
-        if (close(sharedMemoryFd) == -1)
-        {
-            std::cerr << "Failed to close shared memory file descriptor\n";
-        }
-    }
-
     if (sem != SEM_FAILED)
     {
         if (sem_close(sem) == -1)
         {
             std::cerr << "Failed to destroy semaphore\n";
+        }
+    }
+
+    if (sem_unlink(semName.c_str()) == -1)
+    {
+        std::cerr << "Failed to delete semaphore\n";
+    }
+
+    if (sharedMemoryFd)
+    {
+        if (close(sharedMemoryFd) == -1)
+        {
+            std::cerr << "Failed to close shared memory file descriptor\n";
         }
     }
 
@@ -72,8 +78,6 @@ bool BMDMemory::run(int32_t videoMode)
         std::cerr << "Failed to map shared memory\n";
         return false;
     }
-
-    std::string semName = name + "_sem";
 
     if ((sem = sem_open(semName.c_str(), O_CREAT, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED)
     {

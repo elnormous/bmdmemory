@@ -36,6 +36,7 @@ protected:
     sem_t* sem = SEM_FAILED;
 
     std::string name;
+    std::string semName;
     int sharedMemoryFd = -1;
     Memory* sharedMemory = reinterpret_cast<Memory*>(MAP_FAILED);
 
