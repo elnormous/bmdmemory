@@ -277,9 +277,9 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         audioFrame->GetBytes(reinterpret_cast<void**>(&frameData));
         audioFrame->GetPacketTime(&timestamp, audioSampleRate);
 
-        uint32_t sampleFrameCount = static_cast<uint32_t>(audioFrame->GetSampleFrameCount());
+        long sampleFrameCount = audioFrame->GetSampleFrameCount();
 
-        uint32_t dataSize = sampleFrameCount * audioChannels * (audioSampleDepth / 8);
+        uint32_t dataSize = static_cast<uint32_t>(sampleFrameCount) * audioChannels * (audioSampleDepth / 8);
 
         uint32_t offset = 0;
 
