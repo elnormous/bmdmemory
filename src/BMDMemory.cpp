@@ -301,6 +301,9 @@ void BMDMemory::writeMetaData()
 
     uint32_t offset = 0;
 
+    memcpy(sharedMemory->metaData + offset, &pixelFormat, sizeof(pixelFormat));
+    offset += sizeof(pixelFormat);
+
     memcpy(sharedMemory->metaData + offset, &width, sizeof(width));
     offset += sizeof(width);
 
