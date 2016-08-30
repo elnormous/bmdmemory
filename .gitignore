@@ -1,0 +1,4 @@
+bmdmemory
+*.o
+bmdmemory.xcodeproj/xcuserdata
+bmdmemory.xcodeproj/project.xcworkspace
