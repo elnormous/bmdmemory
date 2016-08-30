@@ -307,7 +307,7 @@ void BMDMemory::writeMetaData()
     memcpy(sharedMemory->metaData + offset, &width, sizeof(width));
     offset += sizeof(width);
 
-    memcpy(sharedMemory->metaData + offset, &height, sizeof(uint32_t));
+    memcpy(sharedMemory->metaData + offset, &height, sizeof(height));
     offset += sizeof(height);
 
     memcpy(sharedMemory->metaData + offset, &frameDuration, sizeof(frameDuration)); // numerator
