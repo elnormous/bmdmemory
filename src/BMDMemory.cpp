@@ -241,8 +241,8 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             videoFrame->GetBytes(reinterpret_cast<void**>(&frameData));
             videoFrame->GetStreamTime(&timestamp, &duration, timeScale);
 
-            //uint32_t frameWidth = static_cast<uint32_t>(videoFrame->GetWidth());
-            uint32_t frameHeight = static_cast<uint32_t>(videoFrame->GetHeight());
+            long frameWidth = videoFrame->GetWidth();
+            long frameHeight = videoFrame->GetHeight();
             uint32_t stride = static_cast<uint32_t>(videoFrame->GetRowBytes());
 
             uint32_t offset = 0;
@@ -250,13 +250,16 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             memcpy(sharedMemory->videoData + offset, &timestamp, sizeof(timestamp));
             offset += sizeof(timestamp);
 
+            memcpy(sharedMemory->videoData + offset, &frameWidth, sizeof(frameWidth));
+            offset += sizeof(frameWidth);
+
             memcpy(sharedMemory->videoData + offset, &frameHeight, sizeof(frameHeight));
             offset += sizeof(frameHeight);
 
             memcpy(sharedMemory->videoData + offset, &stride, sizeof(stride));
             offset += sizeof(stride);
 
-            uint32_t dataSize = frameHeight * stride;
+            uint32_t dataSize = static_cast<uint32_t>(frameHeight) * stride;
 
             memcpy(sharedMemory->videoData + offset, frameData, dataSize);
             offset += sizeof(timestamp);
