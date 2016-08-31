@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <sys/mman.h>
 #include <semaphore.h>
 #include "DeckLinkAPI.h"
