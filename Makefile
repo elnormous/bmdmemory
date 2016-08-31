@@ -23,7 +23,7 @@ ifndef SDK_PATH
 endif
 
 CXXFLAGS=-c -std=c++11 -Wall -I $(SDK_PATH)
-LDFLAGS=-lpthread -ldl
+LDFLAGS=-lpthread -ldl -lrt
 ifeq ($(platform),macos)
 LDFLAGS+=-framework CoreFoundation
 endif
