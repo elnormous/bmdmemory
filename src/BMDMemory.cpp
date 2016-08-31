@@ -121,7 +121,7 @@ bool BMDMemory::run(int32_t videoMode)
                                       reinterpret_cast<void**>(&deckLinkConfiguration));
     if (result != S_OK)
     {
-        std::cerr << "Could not obtain the IDeckLinkConfiguration interface - result = " << result << "\n";
+        std::cerr << "Failed to obtain the IDeckLinkConfiguration interface - result = " << result << "\n";
         return false;
     }
 
@@ -130,7 +130,7 @@ bool BMDMemory::run(int32_t videoMode)
     result = deckLinkInput->GetDisplayModeIterator(&displayModeIterator);
     if (result != S_OK)
     {
-        std::cerr << "Could not obtain the video output display mode iterator - result = " << result << "\n";
+        std::cerr << "Failed to obtain the video output display mode iterator - result = " << result << "\n";
         return false;
     }
 
@@ -180,8 +180,12 @@ bool BMDMemory::run(int32_t videoMode)
     result = deckLinkInput->StartStreams();
     if (result != S_OK)
     {
+        std::cerr << "Failed to start streaming\n";
         return false;
     }
+
+    std::cout << "Streaming started\n";
+    std::cout << "width: " << width << ", height: " << height << ", frameDuration: " << frameDuration << ", timeScale: " << timeScale << "\n";
 
     return true;
 }
