@@ -2,6 +2,7 @@
 //  BMD memory
 //
 
+#include <thread>
 #include <iostream>
 #include "BMDMemory.h"
 
@@ -27,5 +28,16 @@ int main(int argc, const char* argv[])
     }
 
     BMDMemory bmdMemory(name);
-    return bmdMemory.run(videoMode) ? 0 : 1;
+
+    if (!bmdMemory.run(videoMode))
+    {
+        return 1;
+    }
+
+    for (;;)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    return 0;
 }
