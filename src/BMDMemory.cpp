@@ -3,7 +3,10 @@
 //
 
 #include <iostream>
-
+#include <unistd.h>
+#include <sys/fcntl.h>
+#include <sys/types.h>
+#include <cstring>
 #include "BMDMemory.h"
 
 BMDMemory::BMDMemory(const std::string& pName):
