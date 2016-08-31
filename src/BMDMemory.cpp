@@ -60,6 +60,7 @@ BMDMemory::~BMDMemory()
 
 bool BMDMemory::run(int32_t videoMode)
 {
+    sem_unlink(semName.c_str());
     shm_unlink(name.c_str());
 
     if ((sharedMemoryFd = shm_open(name.c_str(), O_CREAT | O_EXCL | O_RDWR , S_IRUSR | S_IWUSR)) == -1)
