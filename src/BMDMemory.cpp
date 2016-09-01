@@ -9,9 +9,9 @@
 #include <cstring>
 #include "BMDMemory.h"
 
-const uint32_t MEMORY_SIZE = 64 * 1024 * 1024; // 64 MiB
-const uint32_t VIDEO_OFFSET = 128;
-const uint32_t AUDIO_OFFSET = 40 * 1024 * 1024; // 40 MiB
+static const uint32_t MEMORY_SIZE = 64 * 1024 * 1024; // 64 MiB
+static const uint32_t VIDEO_OFFSET = 128;
+static const uint32_t AUDIO_OFFSET = 40 * 1024 * 1024; // 40 MiB
 
 BMDMemory::BMDMemory(const std::string& pName):
     name(pName)
