@@ -83,6 +83,8 @@ bool BMDMemory::run(int32_t videoMode)
         return false;
     }
 
+    memset(sharedMemory, 0, sizeof(Memory));
+
     if ((sem = sem_open(semName.c_str(), O_CREAT, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED)
     {
         std::cerr << "Failed to initialize semaphore " << errno << "\n";
