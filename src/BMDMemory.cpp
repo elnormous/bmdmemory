@@ -284,7 +284,6 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             offset += sizeof(dataSize);
 
             memcpy(videoData + offset, frameData, dataSize);
-            offset += sizeof(timestamp);
 
             sem_post(sem);
         }
@@ -316,7 +315,6 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         offset += sizeof(dataSize);
 
         memcpy(audioData + offset, frameData, dataSize);
-        offset += sizeof(timestamp);
 
         sem_post(sem);
     }
