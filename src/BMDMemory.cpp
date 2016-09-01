@@ -280,6 +280,8 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             offset += sizeof(stride);
 
             uint32_t dataSize = static_cast<uint32_t>(frameHeight) * stride;
+            memcpy(videoData + offset, &dataSize, sizeof(dataSize));
+            offset += sizeof(dataSize);
 
             memcpy(videoData + offset, frameData, dataSize);
             offset += sizeof(timestamp);
@@ -299,8 +301,6 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
         long sampleFrameCount = audioFrame->GetSampleFrameCount();
 
-        uint32_t dataSize = static_cast<uint32_t>(sampleFrameCount) * audioChannels * (audioSampleDepth / 8);
-
         uint32_t offset = 0;
 
         memcpy(audioData + offset, &timestamp, sizeof(timestamp));
@@ -308,6 +308,10 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
         memcpy(audioData + offset, &sampleFrameCount, sizeof(sampleFrameCount));
         offset += sizeof(sampleFrameCount);
+
+        uint32_t dataSize = static_cast<uint32_t>(sampleFrameCount) * audioChannels * (audioSampleDepth / 8);
+        memcpy(videoData + offset, &dataSize, sizeof(dataSize));
+        offset += sizeof(dataSize);
 
         memcpy(audioData + offset, frameData, dataSize);
         offset += sizeof(timestamp);
