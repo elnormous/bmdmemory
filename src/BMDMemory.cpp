@@ -240,8 +240,6 @@ HRESULT BMDMemory::VideoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDe
 HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
                                          IDeckLinkAudioInputPacket* audioFrame)
 {
-    BMDTimeValue timestamp;
-
     if (videoFrame)
     {
         if (videoFrame->GetFlags() & static_cast<BMDFrameFlags>(bmdFrameHasNoInputSource))
@@ -256,6 +254,8 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
             uint8_t* frameData;
             videoFrame->GetBytes(reinterpret_cast<void**>(&frameData));
+
+            BMDTimeValue timestamp;
             videoFrame->GetStreamTime(&timestamp, &duration, timeScale);
 
             long frameWidth = videoFrame->GetWidth();
@@ -297,6 +297,8 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         uint8_t* frameData;
 
         audioFrame->GetBytes(reinterpret_cast<void**>(&frameData));
+
+        BMDTimeValue timestamp;
         audioFrame->GetPacketTime(&timestamp, audioSampleRate);
 
         long sampleFrameCount = audioFrame->GetSampleFrameCount();
@@ -310,7 +312,7 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         offset += sizeof(sampleFrameCount);
 
         uint32_t dataSize = static_cast<uint32_t>(sampleFrameCount) * audioChannels * (audioSampleDepth / 8);
-        memcpy(videoData + offset, &dataSize, sizeof(dataSize));
+        memcpy(audioData + offset, &dataSize, sizeof(dataSize));
         offset += sizeof(dataSize);
 
         memcpy(audioData + offset, frameData, dataSize);
