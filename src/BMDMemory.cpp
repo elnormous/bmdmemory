@@ -9,6 +9,10 @@
 #include <cstring>
 #include "BMDMemory.h"
 
+const uint32_t MEMORY_SIZE = 64 * 1024 * 1024; // 64 MiB
+const uint32_t VIDEO_OFFSET = 128;
+const uint32_t AUDIO_OFFSET = 40 * 1024 * 1024; // 40 MiB
+
 BMDMemory::BMDMemory(const std::string& pName):
     name(pName)
 {
@@ -46,7 +50,7 @@ BMDMemory::~BMDMemory()
 
     if (sharedMemory == MAP_FAILED)
     {
-        if (munmap(sharedMemory, sizeof(Memory)) == -1)
+        if (munmap(sharedMemory, MEMORY_SIZE) == -1)
         {
             std::cerr << "Failed to unmap shared memory\n";
         }
@@ -69,13 +73,13 @@ bool BMDMemory::run(int32_t videoMode)
         return false;
     }
 
-    if (ftruncate(sharedMemoryFd, sizeof(Memory)) == -1)
+    if (ftruncate(sharedMemoryFd, MEMORY_SIZE) == -1)
     {
         std::cerr << "Failed to resize shared memory\n";
         return false;
     }
 
-    sharedMemory = reinterpret_cast<Memory*>(mmap(nullptr, sizeof(Memory), PROT_READ | PROT_WRITE, MAP_SHARED, sharedMemoryFd, 0));
+    sharedMemory = mmap(nullptr, MEMORY_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, sharedMemoryFd, 0);
 
     if (sharedMemory == MAP_FAILED)
     {
@@ -83,7 +87,7 @@ bool BMDMemory::run(int32_t videoMode)
         return false;
     }
 
-    memset(sharedMemory, 0, sizeof(Memory));
+    memset(sharedMemory, 0, MEMORY_SIZE);
 
     if ((sem = sem_open(semName.c_str(), O_CREAT, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED)
     {
@@ -162,6 +166,9 @@ bool BMDMemory::run(int32_t videoMode)
     displayMode->GetFrameRate(&frameDuration, &timeScale);
     fieldDominance = displayMode->GetFieldDominance();
 
+    metaData = static_cast<uint8_t*>(sharedMemory);
+    videoData = static_cast<uint8_t*>(sharedMemory) + VIDEO_OFFSET;
+    audioData = static_cast<uint8_t*>(sharedMemory) + AUDIO_OFFSET;
     writeMetaData();
 
     result = deckLinkInput->EnableVideoInput(selectedDisplayMode, pixelFormat, 0);
@@ -257,24 +264,24 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
             uint32_t offset = 0;
 
-            memcpy(sharedMemory->videoData + offset, &timestamp, sizeof(timestamp));
+            memcpy(videoData + offset, &timestamp, sizeof(timestamp));
             offset += sizeof(timestamp);
 
-            memcpy(sharedMemory->videoData + offset, &duration, sizeof(timestamp));
+            memcpy(videoData + offset, &duration, sizeof(timestamp));
             offset += sizeof(duration);
 
-            memcpy(sharedMemory->videoData + offset, &frameWidth, sizeof(frameWidth));
+            memcpy(videoData + offset, &frameWidth, sizeof(frameWidth));
             offset += sizeof(frameWidth);
 
-            memcpy(sharedMemory->videoData + offset, &frameHeight, sizeof(frameHeight));
+            memcpy(videoData + offset, &frameHeight, sizeof(frameHeight));
             offset += sizeof(frameHeight);
 
-            memcpy(sharedMemory->videoData + offset, &stride, sizeof(stride));
+            memcpy(videoData + offset, &stride, sizeof(stride));
             offset += sizeof(stride);
 
             uint32_t dataSize = static_cast<uint32_t>(frameHeight) * stride;
 
-            memcpy(sharedMemory->videoData + offset, frameData, dataSize);
+            memcpy(videoData + offset, frameData, dataSize);
             offset += sizeof(timestamp);
 
             sem_post(sem);
@@ -296,13 +303,13 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
         uint32_t offset = 0;
 
-        memcpy(sharedMemory->audioData + offset, &timestamp, sizeof(timestamp));
+        memcpy(audioData + offset, &timestamp, sizeof(timestamp));
         offset += sizeof(timestamp);
 
-        memcpy(sharedMemory->audioData + offset, &sampleFrameCount, sizeof(sampleFrameCount));
+        memcpy(audioData + offset, &sampleFrameCount, sizeof(sampleFrameCount));
         offset += sizeof(sampleFrameCount);
 
-        memcpy(sharedMemory->audioData + offset, frameData, dataSize);
+        memcpy(audioData + offset, frameData, dataSize);
         offset += sizeof(timestamp);
 
         sem_post(sem);
@@ -317,31 +324,31 @@ void BMDMemory::writeMetaData()
 
     uint32_t offset = 0;
 
-    memcpy(sharedMemory->metaData + offset, &pixelFormat, sizeof(pixelFormat));
+    memcpy(metaData + offset, &pixelFormat, sizeof(pixelFormat));
     offset += sizeof(pixelFormat);
 
-    memcpy(sharedMemory->metaData + offset, &width, sizeof(width));
+    memcpy(metaData + offset, &width, sizeof(width));
     offset += sizeof(width);
 
-    memcpy(sharedMemory->metaData + offset, &height, sizeof(height));
+    memcpy(metaData + offset, &height, sizeof(height));
     offset += sizeof(height);
 
-    memcpy(sharedMemory->metaData + offset, &frameDuration, sizeof(frameDuration)); // numerator
+    memcpy(metaData + offset, &frameDuration, sizeof(frameDuration)); // numerator
     offset += sizeof(frameDuration);
 
-    memcpy(sharedMemory->metaData + offset, &timeScale, sizeof(timeScale)); // denumerator
+    memcpy(metaData + offset, &timeScale, sizeof(timeScale)); // denumerator
     offset += sizeof(timeScale);
 
-    memcpy(sharedMemory->metaData + offset, &fieldDominance, sizeof(fieldDominance));
+    memcpy(metaData + offset, &fieldDominance, sizeof(fieldDominance));
     offset += sizeof(fieldDominance);
 
-    memcpy(sharedMemory->metaData + offset, &audioSampleRate, sizeof(audioSampleRate));
+    memcpy(metaData + offset, &audioSampleRate, sizeof(audioSampleRate));
     offset += sizeof(audioSampleRate);
 
-    memcpy(sharedMemory->metaData + offset, &audioSampleDepth, sizeof(audioSampleDepth));
+    memcpy(metaData + offset, &audioSampleDepth, sizeof(audioSampleDepth));
     offset += sizeof(audioSampleDepth);
 
-    memcpy(sharedMemory->metaData + offset, &audioChannels, sizeof(audioChannels));
+    memcpy(metaData + offset, &audioChannels, sizeof(audioChannels));
     offset += sizeof(audioChannels);
 
     sem_post(sem);

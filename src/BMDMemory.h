@@ -27,19 +27,15 @@ public:
 protected:
     void writeMetaData();
 
-    struct Memory
-    {
-        uint8_t metaData[128];
-        uint8_t videoData[1024 * 1024 * 40]; // 40MiB
-        uint8_t audioData[1024 * 1024 * 40]; // 40MiB
-    };
-
     sem_t* sem = SEM_FAILED;
 
     std::string name;
     std::string semName;
     int sharedMemoryFd = -1;
-    Memory* sharedMemory = reinterpret_cast<Memory*>(MAP_FAILED);
+    void* sharedMemory = MAP_FAILED;
+    uint8_t* metaData = nullptr;
+    uint8_t* videoData = nullptr;
+    uint8_t* audioData = nullptr;
 
     ULONG refCount;
     std::mutex dataMutex;
