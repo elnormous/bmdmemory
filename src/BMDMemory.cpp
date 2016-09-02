@@ -2,6 +2,8 @@
 //  BMD memory
 //
 
+#include <functional>
+#include <mutex>
 #include <iostream>
 #include <unistd.h>
 #include <sys/fcntl.h>
@@ -13,6 +15,70 @@ static const uint32_t MEMORY_SIZE = 64 * 1024 * 1024; // 64 MiB
 static const uint32_t VIDEO_OFFSET = 128;
 static const uint32_t AUDIO_OFFSET = 40 * 1024 * 1024; // 40 MiB
 
+class InputCallback:public IDeckLinkInputCallback
+{
+public:
+    InputCallback(const std::function<bool(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode*, BMDDetectedVideoInputFormatFlags)>& pVideoInputFormatChangeCallback,
+                  const std::function<bool(IDeckLinkVideoInputFrame*, IDeckLinkAudioInputPacket*)>& pVideoInputFrameArriveCallback):
+        videoInputFormatChangeCallback(pVideoInputFormatChangeCallback), videoInputFrameArriveCallback(pVideoInputFrameArriveCallback)
+    {
+    }
+
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, LPVOID*) { return E_NOINTERFACE; }
+
+    virtual ULONG STDMETHODCALLTYPE AddRef()
+    {
+        std::lock_guard<std::mutex> lock(dataMutex);
+
+        refCount++;
+        
+        return refCount;
+    }
+
+    virtual ULONG STDMETHODCALLTYPE Release()
+    {
+        std::lock_guard<std::mutex> lock(dataMutex);
+        refCount--;
+
+        if (refCount == 0)
+        {
+            delete this;
+            return 0;
+        }
+
+        return refCount;
+    }
+
+    virtual HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(BMDVideoInputFormatChangedEvents changeEvents, IDeckLinkDisplayMode* newDisplayMode,
+                                                              BMDDetectedVideoInputFormatFlags formatFlags)
+    {
+        if (!videoInputFormatChangeCallback(changeEvents, newDisplayMode, formatFlags))
+        {
+            return S_FALSE;
+        }
+
+        return S_OK;
+    }
+
+    virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
+                                                             IDeckLinkAudioInputPacket* audioFrame)
+    {
+        if (!videoInputFrameArriveCallback(videoFrame, audioFrame))
+        {
+            return S_FALSE;
+        }
+
+        return S_OK;
+    }
+
+private:
+    ULONG refCount;
+    std::mutex dataMutex;
+
+    std::function<bool(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode*, BMDDetectedVideoInputFormatFlags)> videoInputFormatChangeCallback;
+    std::function<bool(IDeckLinkVideoInputFrame*, IDeckLinkAudioInputPacket*)> videoInputFrameArriveCallback;
+};
+
 BMDMemory::BMDMemory(const std::string& pName):
     name(pName)
 {
@@ -21,6 +87,8 @@ BMDMemory::BMDMemory(const std::string& pName):
 
 BMDMemory::~BMDMemory()
 {
+    if (inputCallback) inputCallback->Release();
+
     if (deckLinkConfiguration) deckLinkConfiguration->Release();
     if (displayMode) displayMode->Release();
     if (displayModeIterator) displayModeIterator->Release();
@@ -132,7 +200,10 @@ bool BMDMemory::run(int32_t videoMode)
         return false;
     }
 
-    deckLinkInput->SetCallback(this);
+    inputCallback = new InputCallback(std::bind(&BMDMemory::videoInputFormatChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+                                      std::bind(&BMDMemory::videoInputFrameArrived, this, std::placeholders::_1, std::placeholders::_2));
+
+    deckLinkInput->SetCallback(inputCallback);
 
     result = deckLinkInput->GetDisplayModeIterator(&displayModeIterator);
     if (result != S_OK)
@@ -166,6 +237,8 @@ bool BMDMemory::run(int32_t videoMode)
     displayMode->GetFrameRate(&frameDuration, &timeScale);
     fieldDominance = displayMode->GetFieldDominance();
 
+    std::cout << "width: " << width << ", height: " << height << ", frameDuration: " << frameDuration << ", timeScale: " << timeScale << "\n";
+
     metaData = static_cast<uint8_t*>(sharedMemory);
     videoData = static_cast<uint8_t*>(sharedMemory) + VIDEO_OFFSET;
     audioData = static_cast<uint8_t*>(sharedMemory) + AUDIO_OFFSET;
@@ -195,36 +268,48 @@ bool BMDMemory::run(int32_t videoMode)
     }
 
     std::cout << "Streaming started\n";
-    std::cout << "width: " << width << ", height: " << height << ", frameDuration: " << frameDuration << ", timeScale: " << timeScale << "\n";
 
     return true;
 }
 
-ULONG BMDMemory::AddRef()
+void BMDMemory::writeMetaData()
 {
-    std::lock_guard<std::mutex> lock(dataMutex);
+    sem_wait(sem);
 
-    refCount++;
+    uint32_t offset = 0;
 
-    return refCount;
+    memcpy(metaData + offset, &pixelFormat, sizeof(pixelFormat));
+    offset += sizeof(pixelFormat);
+
+    memcpy(metaData + offset, &width, sizeof(width));
+    offset += sizeof(width);
+
+    memcpy(metaData + offset, &height, sizeof(height));
+    offset += sizeof(height);
+
+    memcpy(metaData + offset, &frameDuration, sizeof(frameDuration)); // numerator
+    offset += sizeof(frameDuration);
+
+    memcpy(metaData + offset, &timeScale, sizeof(timeScale)); // denumerator
+    offset += sizeof(timeScale);
+
+    memcpy(metaData + offset, &fieldDominance, sizeof(fieldDominance));
+    offset += sizeof(fieldDominance);
+
+    memcpy(metaData + offset, &audioSampleRate, sizeof(audioSampleRate));
+    offset += sizeof(audioSampleRate);
+
+    memcpy(metaData + offset, &audioSampleDepth, sizeof(audioSampleDepth));
+    offset += sizeof(audioSampleDepth);
+
+    memcpy(metaData + offset, &audioChannels, sizeof(audioChannels));
+    offset += sizeof(audioChannels);
+
+    sem_post(sem);
 }
 
-ULONG BMDMemory::Release()
-{
-    std::lock_guard<std::mutex> lock(dataMutex);
-    refCount--;
-
-    if (refCount == 0)
-    {
-        delete this;
-        return 0;
-    }
-
-    return refCount;
-}
-
-HRESULT BMDMemory::VideoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode* newDisplayMode,
-                                          BMDDetectedVideoInputFormatFlags)
+bool BMDMemory::videoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode* newDisplayMode,
+                                        BMDDetectedVideoInputFormatFlags)
 {
     displayMode = newDisplayMode;
     width = displayMode->GetWidth();
@@ -237,8 +322,8 @@ HRESULT BMDMemory::VideoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDe
     return S_OK;
 }
 
-HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
-                                         IDeckLinkAudioInputPacket* audioFrame)
+bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
+                                       IDeckLinkAudioInputPacket* audioFrame)
 {
     if (videoFrame)
     {
@@ -320,40 +405,4 @@ HRESULT BMDMemory::VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
     }
 
     return S_OK;
-}
-
-void BMDMemory::writeMetaData()
-{
-    sem_wait(sem);
-
-    uint32_t offset = 0;
-
-    memcpy(metaData + offset, &pixelFormat, sizeof(pixelFormat));
-    offset += sizeof(pixelFormat);
-
-    memcpy(metaData + offset, &width, sizeof(width));
-    offset += sizeof(width);
-
-    memcpy(metaData + offset, &height, sizeof(height));
-    offset += sizeof(height);
-
-    memcpy(metaData + offset, &frameDuration, sizeof(frameDuration)); // numerator
-    offset += sizeof(frameDuration);
-
-    memcpy(metaData + offset, &timeScale, sizeof(timeScale)); // denumerator
-    offset += sizeof(timeScale);
-
-    memcpy(metaData + offset, &fieldDominance, sizeof(fieldDominance));
-    offset += sizeof(fieldDominance);
-
-    memcpy(metaData + offset, &audioSampleRate, sizeof(audioSampleRate));
-    offset += sizeof(audioSampleRate);
-
-    memcpy(metaData + offset, &audioSampleDepth, sizeof(audioSampleDepth));
-    offset += sizeof(audioSampleDepth);
-
-    memcpy(metaData + offset, &audioChannels, sizeof(audioChannels));
-    offset += sizeof(audioChannels);
-
-    sem_post(sem);
 }

@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include <mutex>
 #include <sys/mman.h>
 #include <semaphore.h>
 #include "DeckLinkAPI.h"
 
-class BMDMemory: public IDeckLinkInputCallback
+class InputCallback;
+
+class BMDMemory
 {
 public:
     BMDMemory(const std::string& pName);
@@ -17,14 +18,13 @@ public:
 
     bool run(int32_t videoMode);
 
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, LPVOID*) { return E_NOINTERFACE; }
-    virtual ULONG STDMETHODCALLTYPE AddRef();
-    virtual ULONG STDMETHODCALLTYPE  Release();
-    virtual HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode* newDisplayMode, BMDDetectedVideoInputFormatFlags flags);
-    virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
-                                                             IDeckLinkAudioInputPacket* audioFrame);
-
 protected:
+    bool videoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode* newDisplayMode,
+                                 BMDDetectedVideoInputFormatFlags);
+
+    bool videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
+                                IDeckLinkAudioInputPacket* audioFrame);
+    
     void writeMetaData();
 
     sem_t* sem = SEM_FAILED;
@@ -37,8 +37,7 @@ protected:
     uint8_t* videoData = nullptr;
     uint8_t* audioData = nullptr;
 
-    ULONG refCount;
-    std::mutex dataMutex;
+    InputCallback* inputCallback = nullptr;
 
     IDeckLink* deckLink = nullptr;
     IDeckLinkInput* deckLinkInput = nullptr;
