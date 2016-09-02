@@ -254,6 +254,9 @@ bool BMDMemory::run(int32_t videoMode)
     result = deckLinkInput->EnableAudioInput(audioSampleRate,
                                              audioSampleDepth,
                                              audioChannels);
+
+    std::cout << "audioSampleRate: " << audioSampleRate << ", audioSampleDepth: " << audioSampleDepth << ", audioChannels: " << audioChannels << "\n";
+
     if (result != S_OK)
     {
         std::cerr << "Failed to enable audio input\n";
