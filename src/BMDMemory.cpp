@@ -12,8 +12,9 @@
 #include "BMDMemory.h"
 
 static const uint32_t MEMORY_SIZE = 64 * 1024 * 1024; // 64 MiB
-static const uint32_t VIDEO_OFFSET = 128;
-static const uint32_t AUDIO_OFFSET = 40 * 1024 * 1024; // 40 MiB
+static const uint32_t METADATA_OFFSET = NAME_MAX + 1;
+static const uint32_t VIDEO_OFFSET = METADATA_OFFSET + 128;
+static const uint32_t AUDIO_OFFSET = VIDEO_OFFSET + 40 * 1024 * 1024; // 40 MiB
 
 class InputCallback:public IDeckLinkInputCallback
 {
@@ -157,6 +158,9 @@ bool BMDMemory::run(int32_t videoMode)
 
     memset(sharedMemory, 0, MEMORY_SIZE);
 
+    // copy the name of the semaphore
+    memcpy(sharedMemory, semName.c_str(), semName.length());
+
     if ((sem = sem_open(semName.c_str(), O_CREAT, S_IRUSR | S_IWUSR, 1)) == SEM_FAILED)
     {
         std::cerr << "Failed to initialize semaphore " << errno << "\n";
@@ -239,7 +243,7 @@ bool BMDMemory::run(int32_t videoMode)
 
     std::cout << "width: " << width << ", height: " << height << ", frameDuration: " << frameDuration << ", timeScale: " << timeScale << "\n";
 
-    metaData = static_cast<uint8_t*>(sharedMemory);
+    metaData = static_cast<uint8_t*>(sharedMemory) + METADATA_OFFSET;
     videoData = static_cast<uint8_t*>(sharedMemory) + VIDEO_OFFSET;
     audioData = static_cast<uint8_t*>(sharedMemory) + AUDIO_OFFSET;
     writeMetaData();
