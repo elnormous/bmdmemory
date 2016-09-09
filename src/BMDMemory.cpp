@@ -492,11 +492,11 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
             uint32_t offset = 0;
 
-            memcpy(videoData + offset, &outDuration, sizeof(outDuration));
-            offset += sizeof(outDuration);
-
             memcpy(videoData + offset, &outTimestamp, sizeof(outTimestamp));
             offset += sizeof(outTimestamp);
+
+            memcpy(videoData + offset, &outDuration, sizeof(outDuration));
+            offset += sizeof(outDuration);
 
             memcpy(videoData + offset, &frameWidth, sizeof(frameWidth));
             offset += sizeof(frameWidth);
