@@ -381,34 +381,69 @@ void BMDMemory::writeMetaData()
 {
     sem_wait(sem);
 
+    uint32_t outPixelFormat = 0;
+
+    switch (pixelFormat)
+    {
+        case bmdFormat8BitYUV: outPixelFormat = 0; break;
+        case bmdFormat10BitYUV: outPixelFormat = 1; break;
+        case bmdFormat8BitARGB: outPixelFormat = 2; break;
+        case bmdFormat10BitRGB: outPixelFormat = 3; break;
+        case bmdFormat12BitRGB: outPixelFormat = 4; break;
+        case bmdFormat12BitRGBLE: outPixelFormat = 5; break;
+        case bmdFormat10BitRGBXLE: outPixelFormat = 6; break;
+        case bmdFormat10BitRGBX: outPixelFormat = 7; break;
+    }
+
+    uint32_t outWidth = static_cast<uint32_t>(width);
+    uint32_t outHeight = static_cast<uint32_t>(height);
+
+    int64_t outFrameDuration = frameDuration;
+    int64_t outTimeScale = timeScale;
+
+    uint32_t outFieldDominance = 0;
+
+    switch (fieldDominance)
+    {
+        case bmdUnknownFieldDominance: outFieldDominance = 0; break;
+        case bmdLowerFieldFirst: outFieldDominance = 1; break;
+        case bmdUpperFieldFirst: outFieldDominance = 2; break;
+        case bmdProgressiveFrame: outFieldDominance = 3; break;
+        case bmdProgressiveSegmentedFrame: outFieldDominance = 4; break;
+    }
+
+    uint32_t outAudioSampleRate = audioSampleRate;
+    uint32_t outAudioSampleDepth = audioSampleDepth;
+    uint32_t outAudioChannels = audioChannels;
+
     uint32_t offset = 0;
 
-    memcpy(metaData + offset, &pixelFormat, sizeof(pixelFormat));
-    offset += sizeof(pixelFormat);
+    memcpy(metaData + offset, &outPixelFormat, sizeof(outPixelFormat));
+    offset += sizeof(outPixelFormat);
 
-    memcpy(metaData + offset, &width, sizeof(width));
-    offset += sizeof(width);
+    memcpy(metaData + offset, &outWidth, sizeof(outWidth));
+    offset += sizeof(outWidth);
 
-    memcpy(metaData + offset, &height, sizeof(height));
-    offset += sizeof(height);
+    memcpy(metaData + offset, &outHeight, sizeof(outHeight));
+    offset += sizeof(outHeight);
 
-    memcpy(metaData + offset, &frameDuration, sizeof(frameDuration)); // numerator
-    offset += sizeof(frameDuration);
+    memcpy(metaData + offset, &outFrameDuration, sizeof(outFrameDuration)); // numerator
+    offset += sizeof(outFrameDuration);
 
-    memcpy(metaData + offset, &timeScale, sizeof(timeScale)); // denumerator
-    offset += sizeof(timeScale);
+    memcpy(metaData + offset, &outTimeScale, sizeof(outTimeScale)); // denumerator
+    offset += sizeof(outTimeScale);
 
-    memcpy(metaData + offset, &fieldDominance, sizeof(fieldDominance));
-    offset += sizeof(fieldDominance);
+    memcpy(metaData + offset, &outFieldDominance, sizeof(outFieldDominance));
+    offset += sizeof(outFieldDominance);
 
-    memcpy(metaData + offset, &audioSampleRate, sizeof(audioSampleRate));
-    offset += sizeof(audioSampleRate);
+    memcpy(metaData + offset, &outAudioSampleRate, sizeof(outAudioSampleRate));
+    offset += sizeof(outAudioSampleRate);
 
-    memcpy(metaData + offset, &audioSampleDepth, sizeof(audioSampleDepth));
-    offset += sizeof(audioSampleDepth);
+    memcpy(metaData + offset, &outAudioSampleDepth, sizeof(outAudioSampleDepth));
+    offset += sizeof(outAudioSampleDepth);
 
-    memcpy(metaData + offset, &audioChannels, sizeof(audioChannels));
-    offset += sizeof(audioChannels);
+    memcpy(metaData + offset, &outAudioChannels, sizeof(outAudioChannels));
+    offset += sizeof(outAudioChannels);
 
     sem_post(sem);
 }
