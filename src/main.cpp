@@ -66,11 +66,6 @@ int main(int argc, const char* argv[])
         }
     }
 
-    if (argc >= 3)
-    {
-        videoMode = atoi(argv[2]);
-    }
-
     BMDMemory bmdMemory(name,
                         instance,
                         videoMode,
