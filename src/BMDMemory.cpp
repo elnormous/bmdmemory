@@ -398,8 +398,8 @@ void BMDMemory::writeMetaData()
     uint32_t outWidth = static_cast<uint32_t>(width);
     uint32_t outHeight = static_cast<uint32_t>(height);
 
-    uint32_t outFrameDuration = frameDuration;
-    uint32_t outTimeScale = timeScale;
+    uint32_t outFrameDuration = static_cast<uint32_t>(frameDuration);
+    uint32_t outTimeScale = static_cast<uint32_t>(timeScale);
 
     uint32_t outFieldDominance = 0;
 
