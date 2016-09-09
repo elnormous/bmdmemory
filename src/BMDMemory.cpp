@@ -190,7 +190,7 @@ bool BMDMemory::run()
 
     int instanceCount = 0;
 
-    while (deckLinkIterator->Next(&deckLink) == S_OK)
+    while ((result = deckLinkIterator->Next(&deckLink)) == S_OK)
     {
         if (instance == instanceCount)
         {
