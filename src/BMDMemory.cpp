@@ -335,7 +335,6 @@ bool BMDMemory::run()
     metaData = static_cast<uint8_t*>(sharedMemory) + METADATA_OFFSET;
     videoData = static_cast<uint8_t*>(sharedMemory) + VIDEO_OFFSET;
     audioData = static_cast<uint8_t*>(sharedMemory) + AUDIO_OFFSET;
-    writeMetaData();
 
     switch (videoFormat)
     {
@@ -364,6 +363,8 @@ bool BMDMemory::run()
         std::cerr << "Failed to enable audio input\n";
         return false;
     }
+
+    writeMetaData();
 
     result = deckLinkInput->StartStreams();
     if (result != S_OK)
