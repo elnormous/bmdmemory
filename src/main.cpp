@@ -32,62 +32,37 @@ int main(int argc, const char* argv[])
         if (strcmp(argv[i], "-instance") == 0)
         {
             if (argc > i + 1)
-            {
-                instance = atoi(argv[+1]);
-                i++;
-            }
+                instance = atoi(argv[++i]);
             else
-            {
                 std::cerr << "Invalid argument" << std::endl;
-            }
         }
         else if (strcmp(argv[i], "-video_mode") == 0)
         {
             if (argc > i + 1)
-            {
-                videoMode = atoi(argv[+1]);
-                i++;
-            }
+                videoMode = atoi(argv[++i]);
             else
-            {
                 std::cerr << "Invalid argument" << std::endl;
-            }
         }
         else if (strcmp(argv[i], "-video_connection") == 0)
         {
             if (argc > i + 1)
-            {
-                videoConnection = atoi(argv[+1]);
-                i++;
-            }
+                videoConnection = atoi(argv[++i]);
             else
-            {
                 std::cerr << "Invalid argument" << std::endl;
-            }
         }
         else if (strcmp(argv[i], "-video_format") == 0)
         {
             if (argc > i + 1)
-            {
-                videoFormat = atoi(argv[+1]);
-                i++;
-            }
+                videoFormat = atoi(argv[++i]);
             else
-            {
                 std::cerr << "Invalid argument" << std::endl;
-            }
         }
         else if (strcmp(argv[i], "-audio_connection") == 0)
         {
             if (argc > i + 1)
-            {
-                audioConnection = atoi(argv[+1]);
-                i++;
-            }
+                audioConnection = atoi(argv[++i]);
             else
-            {
                 std::cerr << "Invalid argument" << std::endl;
-            }
         }
     }
 
