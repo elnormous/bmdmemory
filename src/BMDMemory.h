@@ -13,10 +13,15 @@ class InputCallback;
 class BMDMemory
 {
 public:
-    BMDMemory(const std::string& pName);
+    BMDMemory(const std::string& pName,
+              int32_t pInstance,
+              int32_t pVideoMode,
+              int32_t pVideoConnection,
+              int32_t pVideoFormat,
+              int32_t pAudioConnection);
     virtual ~BMDMemory();
 
-    bool run(int32_t videoMode);
+    bool run();
 
 protected:
     bool videoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode* newDisplayMode,
@@ -30,7 +35,15 @@ protected:
     sem_t* sem = SEM_FAILED;
 
     std::string name;
+    int32_t instance = 0;
+    int32_t videoMode = 0;
+    int32_t videoConnection = 0;
+    int32_t videoFormat = 0;
+    int32_t audioConnection = 0;
+
     std::string semName;
+
+
     int sharedMemoryFd = -1;
     void* sharedMemory = MAP_FAILED;
     uint8_t* metaData = nullptr;

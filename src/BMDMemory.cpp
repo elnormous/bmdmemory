@@ -81,8 +81,18 @@ private:
     std::function<bool(IDeckLinkVideoInputFrame*, IDeckLinkAudioInputPacket*)> videoInputFrameArriveCallback;
 };
 
-BMDMemory::BMDMemory(const std::string& pName):
-    name(pName)
+BMDMemory::BMDMemory(const std::string& pName,
+                     int32_t pInstance,
+                     int32_t pVideoMode,
+                     int32_t pVideoConnection,
+                     int32_t pVideoFormat,
+                     int32_t pAudioConnection):
+    name(pName),
+    instance(pInstance),
+    videoMode(pVideoMode),
+    videoConnection(pVideoConnection),
+    videoFormat(pVideoFormat),
+    audioConnection(pAudioConnection)
 {
     semName = name + "_sem";
 }
@@ -132,7 +142,7 @@ BMDMemory::~BMDMemory()
     }
 }
 
-bool BMDMemory::run(int32_t videoMode)
+bool BMDMemory::run()
 {
     sem_unlink(semName.c_str());
     shm_unlink(name.c_str());
@@ -178,15 +188,32 @@ bool BMDMemory::run(int32_t videoMode)
 
     HRESULT result;
 
-    do
+    int instanceCount = 0;
+
+    while (deckLinkIterator->Next(&deckLink) == S_OK)
     {
-        result = deckLinkIterator->Next(&deckLink);
+        if (instance == instanceCount)
+        {
+            // found instance
+            break;
+        }
+        else
+        {
+            //deckLink->Release();
+            instanceCount++;
+        }
     }
-    while (result != S_OK);
 
     if (result != S_OK)
     {
-        std::cerr << "No DeckLink PCI cards found\n";
+        std::cerr << "Failed to get DeckLink PCI card\n";
+        return false;
+    }
+
+    if (instance != instanceCount ||
+        !deckLink)
+    {
+        std::cerr << "DeckLink PCI card not found\n";
         return false;
     }
 
@@ -205,6 +232,56 @@ bool BMDMemory::run(int32_t videoMode)
         return false;
     }
 
+    switch (audioConnection)
+    {
+        case 1:
+            result = deckLinkConfiguration->SetInt(bmdDeckLinkConfigAudioInputConnection,
+                                                   bmdAudioConnectionAnalog);
+            break;
+        case 2:
+            result = deckLinkConfiguration->SetInt(bmdDeckLinkConfigAudioInputConnection,
+                                                   bmdAudioConnectionEmbedded);
+            break;
+        default:
+            // do not change it
+            break;
+    }
+
+    if (result != S_OK)
+    {
+        std::cerr << "Failed to set declick audio configuration" << "\n";
+        return false;
+    }
+
+    switch (videoConnection)
+    {
+        case 1:
+            result = deckLinkConfiguration->SetInt(bmdDeckLinkConfigVideoInputConnection,
+                                                   bmdVideoConnectionComposite);
+            break;
+        case 2:
+            result = deckLinkConfiguration->SetInt(bmdDeckLinkConfigVideoInputConnection,
+                                                   bmdVideoConnectionComponent);
+            break;
+        case 3:
+            result = deckLinkConfiguration->SetInt(bmdDeckLinkConfigVideoInputConnection,
+                                                   bmdVideoConnectionHDMI);
+            break;
+        case 4:
+            result = deckLinkConfiguration->SetInt(bmdDeckLinkConfigVideoInputConnection,
+                                                   bmdVideoConnectionSDI);
+            break;
+        default:
+            // do not change it
+            break;
+    }
+    
+    if (result != S_OK)
+    {
+        std::cerr << "Failed to set declick video configuration" << "\n";
+        return false;
+    }
+
     inputCallback = new InputCallback(std::bind(&BMDMemory::videoInputFormatChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
                                       std::bind(&BMDMemory::videoInputFrameArrived, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -219,23 +296,34 @@ bool BMDMemory::run(int32_t videoMode)
 
     int displayModeCount = 0;
 
-    while (displayModeIterator->Next(&displayMode) == S_OK)
+    while ((result = displayModeIterator->Next(&displayMode)) == S_OK)
     {
-        if (videoMode == -1 || videoMode == displayModeCount)
+        if (videoMode == displayModeCount)
         {
-            selectedDisplayMode = displayMode->GetDisplayMode();
+            // found video mode
             break;
         }
-        displayModeCount++;
-        displayMode->Release();
-        displayMode = nullptr;
+        else
+        {
+            displayMode->Release();
+            displayModeCount++;
+        }
     }
 
-    if (!displayMode)
+    if (result != S_OK)
+    {
+        std::cerr << "Failed to get display mode\n";
+        return false;
+    }
+
+    if (displayModeCount != videoMode ||
+        !displayMode)
     {
         std::cerr << "Failed to find display mode\n";
         return false;
     }
+
+    selectedDisplayMode = displayMode->GetDisplayMode();
 
     width = displayMode->GetWidth();
     height = displayMode->GetHeight();
@@ -248,6 +336,15 @@ bool BMDMemory::run(int32_t videoMode)
     videoData = static_cast<uint8_t*>(sharedMemory) + VIDEO_OFFSET;
     audioData = static_cast<uint8_t*>(sharedMemory) + AUDIO_OFFSET;
     writeMetaData();
+
+    switch (videoFormat)
+    {
+        case 0: pixelFormat = bmdFormat8BitYUV; break;
+        case 1: pixelFormat = bmdFormat10BitYUV; break;
+        case 2: pixelFormat = bmdFormat8BitARGB; break;
+        case 3: pixelFormat = bmdFormat10BitRGB; break;
+        case 4: pixelFormat = bmdFormat8BitBGRA; break;
+    }
 
     result = deckLinkInput->EnableVideoInput(selectedDisplayMode, pixelFormat, 0);
     if (result != S_OK)
