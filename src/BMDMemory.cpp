@@ -468,50 +468,43 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 {
     sem_wait(sem);
 
-    if (videoFrame)
+    if (videoFrame && (videoFrame->GetFlags() & static_cast<BMDFrameFlags>(bmdFrameHasNoInputSource)) == 0)
     {
-        if (videoFrame->GetFlags() & static_cast<BMDFrameFlags>(bmdFrameHasNoInputSource))
-        {
-            return S_OK;
-        }
-        else
-        {
-            void* frameData;
-            videoFrame->GetBytes(&frameData);
+        void* frameData;
+        videoFrame->GetBytes(&frameData);
 
-            BMDTimeValue duration;
-            BMDTimeValue timestamp;
-            videoFrame->GetStreamTime(&timestamp, &duration, timeScale);
+        BMDTimeValue duration;
+        BMDTimeValue timestamp;
+        videoFrame->GetStreamTime(&timestamp, &duration, timeScale);
 
-            uint64_t outTimestamp = static_cast<uint64_t>(timestamp);
-            uint32_t outDuration = static_cast<uint32_t>(duration);
-            uint32_t frameWidth = static_cast<uint32_t>(videoFrame->GetWidth());
-            uint32_t frameHeight = static_cast<uint32_t>(videoFrame->GetHeight());
-            uint32_t stride = static_cast<uint32_t>(videoFrame->GetRowBytes());
-            uint32_t dataSize = frameHeight * stride;
+        uint64_t outTimestamp = static_cast<uint64_t>(timestamp);
+        uint32_t outDuration = static_cast<uint32_t>(duration);
+        uint32_t frameWidth = static_cast<uint32_t>(videoFrame->GetWidth());
+        uint32_t frameHeight = static_cast<uint32_t>(videoFrame->GetHeight());
+        uint32_t stride = static_cast<uint32_t>(videoFrame->GetRowBytes());
+        uint32_t dataSize = frameHeight * stride;
 
-            uint32_t offset = 0;
+        uint32_t offset = 0;
 
-            memcpy(videoData + offset, &outTimestamp, sizeof(outTimestamp));
-            offset += sizeof(outTimestamp);
+        memcpy(videoData + offset, &outTimestamp, sizeof(outTimestamp));
+        offset += sizeof(outTimestamp);
 
-            memcpy(videoData + offset, &outDuration, sizeof(outDuration));
-            offset += sizeof(outDuration);
+        memcpy(videoData + offset, &outDuration, sizeof(outDuration));
+        offset += sizeof(outDuration);
 
-            memcpy(videoData + offset, &frameWidth, sizeof(frameWidth));
-            offset += sizeof(frameWidth);
+        memcpy(videoData + offset, &frameWidth, sizeof(frameWidth));
+        offset += sizeof(frameWidth);
 
-            memcpy(videoData + offset, &frameHeight, sizeof(frameHeight));
-            offset += sizeof(frameHeight);
+        memcpy(videoData + offset, &frameHeight, sizeof(frameHeight));
+        offset += sizeof(frameHeight);
 
-            memcpy(videoData + offset, &stride, sizeof(stride));
-            offset += sizeof(stride);
+        memcpy(videoData + offset, &stride, sizeof(stride));
+        offset += sizeof(stride);
 
-            memcpy(videoData + offset, &dataSize, sizeof(dataSize));
-            offset += sizeof(dataSize);
+        memcpy(videoData + offset, &dataSize, sizeof(dataSize));
+        offset += sizeof(dataSize);
 
-            memcpy(videoData + offset, frameData, dataSize);
-        }
+        memcpy(videoData + offset, frameData, dataSize);
     }
 
     if (audioFrame)
@@ -543,5 +536,5 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
     sem_post(sem);
 
-    return S_OK;
+    return true;
 }
