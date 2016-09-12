@@ -466,6 +466,8 @@ bool BMDMemory::videoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckL
 bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
                                        IDeckLinkAudioInputPacket* audioFrame)
 {
+    sem_wait(sem);
+
     if (videoFrame)
     {
         if (videoFrame->GetFlags() & static_cast<BMDFrameFlags>(bmdFrameHasNoInputSource))
@@ -474,8 +476,6 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         }
         else
         {
-            sem_wait(sem);
-
             void* frameData;
             videoFrame->GetBytes(&frameData);
 
@@ -511,15 +511,11 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             offset += sizeof(dataSize);
 
             memcpy(videoData + offset, frameData, dataSize);
-
-            sem_post(sem);
         }
     }
 
     if (audioFrame)
     {
-        sem_wait(sem);
-
         void* frameData;
 
         audioFrame->GetBytes(&frameData);
@@ -543,9 +539,9 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
         offset += sizeof(dataSize);
 
         memcpy(audioData + offset, frameData, dataSize);
-
-        sem_post(sem);
     }
+
+    sem_post(sem);
 
     return S_OK;
 }
