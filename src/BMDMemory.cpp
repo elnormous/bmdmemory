@@ -105,7 +105,13 @@ BMDMemory::~BMDMemory()
     if (displayMode) displayMode->Release();
     if (displayModeIterator) displayModeIterator->Release();
     if (deckLinkInput) deckLinkInput->Release();
-    if (deckLink) deckLink->Release();
+    if (deckLink)
+    {
+        deckLinkInput->StopStreams();
+        deckLinkInput->DisableVideoInput();
+        deckLinkInput->DisableAudioInput();
+        deckLink->Release();
+    }
 
     if (sem != SEM_FAILED)
     {
