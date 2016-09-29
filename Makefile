@@ -47,10 +47,23 @@ $(EXECUTABLE): $(OBJECTS)
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $< -o $@
 
-.PHONY: clean
+prefix=/usr/bin
+
+install:
+	mkdir -p $(prefix)
+	install -m 0755 $(BINDIR)/$(EXECUTABLE) $(prefix)
+
+.PHONY: install
+
+uninstall:
+	rm -f $(prefix)/$(EXECUTABLE)
+
+.PHONY: uninstall
 
 clean:
 	rm -rf src/*.o $(BINDIR)/$(EXECUTABLE) $(BINDIR)
+
+.PHONY: clean
 
 directories: ${BINDIR}
 
