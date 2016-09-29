@@ -1,31 +1,28 @@
-ifndef platform
-	ifeq ($(OS),Windows_NT)
-		platform=windows
-	else
-		UNAME := $(shell uname -s)
-		ifeq ($(UNAME),Linux)
-			platform=linux
-		endif
-		ifeq ($(UNAME),Darwin)
-			platform=macos
-		endif
-	endif
-endif
-
-ifndef SDK_PATH
-    ifeq ($(platform),linux)
-        SDK_PATH=BlackmagicDeckLinkSDK/Linux/include
-    else ifeq ($(platform),macos)
-        SDK_PATH=BlackmagicDeckLinkSDK/Mac/include
-    else ifeq ($(platform),windows)
-        SDK_PATH=BlackmagicDeckLinkSDK/Win/include
+ifeq ($(OS),Windows_NT)
+    platform=windows
+else
+    UNAME := $(shell uname -s)
+    ifeq ($(UNAME),Linux)
+        platform=linux
+    endif
+    ifeq ($(UNAME),Darwin)
+        platform=macos
     endif
 endif
 
 CXXFLAGS=-c -std=c++11 -Wall -I $(SDK_PATH)
-LDFLAGS=-lpthread -ldl -lrt
-ifeq ($(platform),macos)
-LDFLAGS+=-framework CoreFoundation
+LDFLAGS=-lpthread -ldl
+
+ifndef SDK_PATH
+    ifeq ($(platform),linux)
+        SDK_PATH=BlackmagicDeckLinkSDK/Linux/include
+        LDFLAGS+=-lrt
+    else ifeq ($(platform),macos)
+        SDK_PATH=BlackmagicDeckLinkSDK/Mac/include
+        LDFLAGS+=-framework CoreFoundation
+    else ifeq ($(platform),windows)
+        SDK_PATH=BlackmagicDeckLinkSDK/Win/include
+    endif
 endif
 
 SOURCES=$(SDK_PATH)/DeckLinkAPIDispatch.cpp \
