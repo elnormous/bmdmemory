@@ -162,6 +162,7 @@ bool BMDMemory::run()
 
     // fille header with zeros
     memset(sharedMemory, 0, headerSize);
+    dataOffset = headerSize;
 
     IDeckLinkIterator* deckLinkIterator = CreateDeckLinkIteratorInstance();
 
