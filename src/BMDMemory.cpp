@@ -85,16 +85,20 @@ BMDMemory::BMDMemory(const std::string& pName,
                      int32_t pVideoMode,
                      int32_t pVideoConnection,
                      int32_t pVideoFormat,
-                     int32_t pAudioConnection,
-                     uint32_t pSharedMemorySize):
+                     int32_t pAudioConnection):
     name(pName),
     instance(pInstance),
     videoMode(pVideoMode),
     videoConnection(pVideoConnection),
     videoFormat(pVideoFormat),
     audioConnection(pAudioConnection),
-    sharedMemorySize(pSharedMemorySize),
-    headerSize(sizeof(currentMetaDataOffset) + sizeof(currentVideoData) + sizeof(currentAudioData))
+    headerSize(sizeof(currentMetaDataOffset) + sizeof(currentVideoDataOffset) + sizeof(currentAudioDataOffset)),
+    metaDataOffset(headerSize),
+    metaDataSize(100), // 100 bytes
+    videoDataOffset(metaDataOffset + metaDataSize),
+    videoDataSize(80 * 1024 * 1024), // 80 MiB
+    audioDataOffset(videoDataOffset + videoDataSize),
+    audioDataSize(sharedMemorySize - audioDataOffset)
 {
 }
 
@@ -405,14 +409,13 @@ void BMDMemory::writeMetaData()
         sizeof(outAudioSampleRate) +
         sizeof(outAudioSampleDepth) +
         sizeof(outAudioChannels) +
-        headerSize +
-        dataOffset > sharedMemorySize ||
-        dataOffset < headerSize)
+        currentMetaDataOffset > metaDataSize ||
+        currentMetaDataOffset < metaDataOffset)
     {
-        dataOffset = headerSize;
+        currentMetaDataOffset = metaDataOffset;
     }
 
-    uint32_t offset = dataOffset;
+    uint32_t offset = currentMetaDataOffset;
 
     memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + offset, &outPixelFormat, sizeof(outPixelFormat));
     offset += sizeof(outPixelFormat);
@@ -443,16 +446,9 @@ void BMDMemory::writeMetaData()
 
     uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[0];
 
-    if (dataOffset > *currentOffset)
-    {
-        __sync_add_and_fetch(currentOffset, dataOffset - *currentOffset);
-    }
-    else
-    {
-        __sync_sub_and_fetch(currentOffset, *currentOffset - dataOffset);
-    }
-
-    dataOffset = offset;
+    currentMetaDataOffset = (currentMetaDataOffset > *currentOffset) ?
+        __sync_add_and_fetch(currentOffset, currentMetaDataOffset - *currentOffset) :
+        __sync_sub_and_fetch(currentOffset, *currentOffset - currentMetaDataOffset);
 }
 
 bool BMDMemory::videoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode* newDisplayMode,
@@ -496,13 +492,13 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             sizeof(dataSize) +
             dataSize +
             headerSize +
-            dataOffset > sharedMemorySize ||
-            dataOffset < headerSize)
+            currentVideoDataOffset > videoDataSize ||
+            currentVideoDataOffset < videoDataOffset)
         {
-            dataOffset = headerSize;
+            currentVideoDataOffset = videoDataOffset;
         }
 
-        uint32_t offset = dataOffset;
+        uint32_t offset = currentVideoDataOffset;
 
         memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + offset, &outTimestamp, sizeof(outTimestamp));
         offset += sizeof(outTimestamp);
@@ -527,16 +523,9 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
         uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[1];
 
-        if (dataOffset > *currentOffset)
-        {
-            __sync_add_and_fetch(currentOffset, dataOffset - *currentOffset);
-        }
-        else
-        {
-            __sync_sub_and_fetch(currentOffset, *currentOffset - dataOffset);
-        }
-
-        dataOffset = offset;
+        currentVideoDataOffset = (currentVideoDataOffset > *currentOffset) ?
+            __sync_add_and_fetch(currentOffset, currentVideoDataOffset - *currentOffset) :
+            __sync_sub_and_fetch(currentOffset, *currentOffset - currentVideoDataOffset);
     }
 
     if (audioFrame)
@@ -556,14 +545,13 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             sizeof(sampleFrameCount) +
             sizeof(dataSize) +
             dataSize +
-            headerSize +
-            dataOffset > sharedMemorySize ||
-            dataOffset < headerSize)
+            currentAudioDataOffset > audioDataSize ||
+            currentAudioDataOffset < audioDataOffset)
         {
-            dataOffset = headerSize;
+            currentAudioDataOffset = audioDataOffset;
         }
 
-        uint32_t offset = dataOffset;
+        uint32_t offset = currentAudioDataOffset;
 
         memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + offset, &outTimestamp, sizeof(outTimestamp));
         offset += sizeof(outTimestamp);
@@ -579,16 +567,9 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
         uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[2];
 
-        if (dataOffset > *currentOffset)
-        {
-            __sync_add_and_fetch(currentOffset, dataOffset - *currentOffset);
-        }
-        else
-        {
-            __sync_sub_and_fetch(currentOffset, *currentOffset - dataOffset);
-        }
-
-        dataOffset = offset;
+        currentAudioDataOffset = (currentAudioDataOffset > *currentOffset) ?
+            __sync_add_and_fetch(currentOffset, currentAudioDataOffset - *currentOffset) :
+            __sync_sub_and_fetch(currentOffset, *currentOffset - currentAudioDataOffset);
     }
 
     return true;

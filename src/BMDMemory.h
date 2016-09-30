@@ -17,8 +17,7 @@ public:
               int32_t pVideoMode,
               int32_t pVideoConnection,
               int32_t pVideoFormat,
-              int32_t pAudioConnection,
-              uint32_t pSharedMemorySize);
+              int32_t pAudioConnection);
     virtual ~BMDMemory();
 
     bool run();
@@ -42,14 +41,22 @@ protected:
 
     int sharedMemoryFd = -1;
     void* sharedMemory = MAP_FAILED;
-    const uint32_t sharedMemorySize;
+    const uint32_t sharedMemorySize = 128 * 1024 * 1024; // 128 MiB
 
     const uint32_t headerSize;
 
     uint32_t currentMetaDataOffset = 0;
-    uint32_t currentVideoData = 0;
-    uint32_t currentAudioData = 0;
-    uint32_t dataOffset = 0;
+    uint32_t currentVideoDataOffset = 0;
+    uint32_t currentAudioDataOffset = 0;
+
+    const uint32_t metaDataOffset;
+    const uint32_t metaDataSize;
+
+    const uint32_t videoDataOffset;
+    const uint32_t videoDataSize;
+
+    const uint32_t audioDataOffset;
+    const uint32_t audioDataSize;
 
     InputCallback* inputCallback = nullptr;
 

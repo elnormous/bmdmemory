@@ -26,7 +26,6 @@ int main(int argc, const char* argv[])
     int32_t videoConnection = 0;
     int32_t videoFormat = 0;
     int32_t audioConnection = 0;
-    uint32_t sharedMemorySize = 128 * 1024 * 1024; // 128 MiB
 
     for (int i = 2; i < argc; ++i)
     {
@@ -65,13 +64,6 @@ int main(int argc, const char* argv[])
             else
                 std::cerr << "Invalid argument" << std::endl;
         }
-        else if (strcmp(argv[i], "-memory_size") == 0)
-        {
-            if (argc > i + 1)
-                sharedMemorySize = static_cast<uint32_t>(atoi(argv[++i])) * 1024 * 1024;
-            else
-                std::cerr << "Invalid argument" << std::endl;
-        }
     }
 
     BMDMemory bmdMemory(name,
@@ -79,8 +71,7 @@ int main(int argc, const char* argv[])
                         videoMode,
                         videoConnection,
                         videoFormat,
-                        audioConnection,
-                        sharedMemorySize);
+                        audioConnection);
 
     if (!bmdMemory.run())
     {
