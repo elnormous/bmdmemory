@@ -446,9 +446,16 @@ void BMDMemory::writeMetaData()
 
     uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[0];
 
-    currentMetaDataOffset = (currentMetaDataOffset > *currentOffset) ?
-        __sync_add_and_fetch(currentOffset, currentMetaDataOffset - *currentOffset) :
+    if (currentMetaDataOffset > *currentOffset)
+    {
+        __sync_add_and_fetch(currentOffset, currentMetaDataOffset - *currentOffset);
+    }
+    else
+    {
         __sync_sub_and_fetch(currentOffset, *currentOffset - currentMetaDataOffset);
+    }
+
+    currentMetaDataOffset = offset;
 }
 
 bool BMDMemory::videoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode* newDisplayMode,
@@ -523,9 +530,16 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
         uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[1];
 
-        currentVideoDataOffset = (currentVideoDataOffset > *currentOffset) ?
-            __sync_add_and_fetch(currentOffset, currentVideoDataOffset - *currentOffset) :
+        if (currentVideoDataOffset > *currentOffset)
+        {
+            __sync_add_and_fetch(currentOffset, currentVideoDataOffset - *currentOffset);
+        }
+        else
+        {
             __sync_sub_and_fetch(currentOffset, *currentOffset - currentVideoDataOffset);
+        }
+
+        currentVideoDataOffset = offset;
     }
 
     if (audioFrame)
@@ -567,9 +581,16 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
 
         uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[2];
 
-        currentAudioDataOffset = (currentAudioDataOffset > *currentOffset) ?
-            __sync_add_and_fetch(currentOffset, currentAudioDataOffset - *currentOffset) :
+        if (currentAudioDataOffset > *currentOffset)
+        {
+            __sync_add_and_fetch(currentOffset, currentAudioDataOffset - *currentOffset);
+        }
+        else
+        {
             __sync_sub_and_fetch(currentOffset, *currentOffset - currentAudioDataOffset);
+        }
+
+        currentAudioDataOffset = offset;
     }
 
     return true;
