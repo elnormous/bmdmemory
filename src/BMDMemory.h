@@ -5,7 +5,6 @@
 #pragma once
 
 #include <sys/mman.h>
-#include <semaphore.h>
 #include "DeckLinkAPI.h"
 
 class InputCallback;
@@ -18,21 +17,21 @@ public:
               int32_t pVideoMode,
               int32_t pVideoConnection,
               int32_t pVideoFormat,
-              int32_t pAudioConnection);
+              int32_t pAudioConnection,
+              uint32_t pSharedMemorySize);
     virtual ~BMDMemory();
 
     bool run();
 
 protected:
-    bool videoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode* newDisplayMode,
+    bool videoInputFormatChanged(BMDVideoInputFormatChangedEvents,
+                                 IDeckLinkDisplayMode* newDisplayMode,
                                  BMDDetectedVideoInputFormatFlags);
 
     bool videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
                                 IDeckLinkAudioInputPacket* audioFrame);
     
     void writeMetaData();
-
-    sem_t* sem = SEM_FAILED;
 
     std::string name;
     int32_t instance = 0;
@@ -41,14 +40,18 @@ protected:
     int32_t videoFormat = 0;
     int32_t audioConnection = 0;
 
-    std::string semName;
-
-
     int sharedMemoryFd = -1;
     void* sharedMemory = MAP_FAILED;
-    uint8_t* metaData = nullptr;
-    uint8_t* videoData = nullptr;
-    uint8_t* audioData = nullptr;
+    const uint32_t sharedMemorySize;
+
+    const uint32_t headerSize;
+
+    uint32_t currentMetaDataOffset = 0;
+    uint32_t currentVideoData = 0;
+    uint32_t currentAudioData = 0;
+    uint8_t* dataMemory = nullptr;
+    const uint32_t dataMemorySize;
+    uint32_t dataMemoryOffset = 0;
 
     InputCallback* inputCallback = nullptr;
 
