@@ -94,8 +94,7 @@ BMDMemory::BMDMemory(const std::string& pName,
     videoFormat(pVideoFormat),
     audioConnection(pAudioConnection),
     sharedMemorySize(pSharedMemorySize),
-    headerSize(sizeof(currentMetaDataOffset) + sizeof(currentVideoData) + sizeof(currentAudioData)),
-    dataMemorySize(sharedMemorySize - headerSize)
+    headerSize(sizeof(currentMetaDataOffset) + sizeof(currentVideoData) + sizeof(currentAudioData))
 {
 }
 
@@ -163,8 +162,6 @@ bool BMDMemory::run()
 
     // fille header with zeros
     memset(sharedMemory, 0, headerSize);
-
-    dataMemory = reinterpret_cast<uint8_t*>(sharedMemory) + headerSize;
 
     IDeckLinkIterator* deckLinkIterator = CreateDeckLinkIteratorInstance();
 
@@ -408,47 +405,48 @@ void BMDMemory::writeMetaData()
         sizeof(outAudioSampleRate) +
         sizeof(outAudioSampleDepth) +
         sizeof(outAudioChannels) +
-        dataMemoryOffset > dataMemorySize)
+        headerSize +
+        dataOffset > sharedMemorySize)
     {
-        dataMemoryOffset = 0;
+        dataOffset = headerSize;
     }
 
-    memcpy(dataMemory + dataMemoryOffset, &outPixelFormat, sizeof(outPixelFormat));
-    dataMemoryOffset += sizeof(outPixelFormat);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outPixelFormat, sizeof(outPixelFormat));
+    dataOffset += sizeof(outPixelFormat);
 
-    memcpy(dataMemory + dataMemoryOffset, &outWidth, sizeof(outWidth));
-    dataMemoryOffset += sizeof(outWidth);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outWidth, sizeof(outWidth));
+    dataOffset += sizeof(outWidth);
 
-    memcpy(dataMemory + dataMemoryOffset, &outHeight, sizeof(outHeight));
-    dataMemoryOffset += sizeof(outHeight);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outHeight, sizeof(outHeight));
+    dataOffset += sizeof(outHeight);
 
-    memcpy(dataMemory + dataMemoryOffset, &outFrameDuration, sizeof(outFrameDuration)); // numerator
-    dataMemoryOffset += sizeof(outFrameDuration);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outFrameDuration, sizeof(outFrameDuration)); // numerator
+    dataOffset += sizeof(outFrameDuration);
 
-    memcpy(dataMemory + dataMemoryOffset, &outTimeScale, sizeof(outTimeScale)); // denumerator
-    dataMemoryOffset += sizeof(outTimeScale);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outTimeScale, sizeof(outTimeScale)); // denumerator
+    dataOffset += sizeof(outTimeScale);
 
-    memcpy(dataMemory + dataMemoryOffset, &outFieldDominance, sizeof(outFieldDominance));
-    dataMemoryOffset += sizeof(outFieldDominance);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outFieldDominance, sizeof(outFieldDominance));
+    dataOffset += sizeof(outFieldDominance);
 
-    memcpy(dataMemory + dataMemoryOffset, &outAudioSampleRate, sizeof(outAudioSampleRate));
-    dataMemoryOffset += sizeof(outAudioSampleRate);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outAudioSampleRate, sizeof(outAudioSampleRate));
+    dataOffset += sizeof(outAudioSampleRate);
 
-    memcpy(dataMemory + dataMemoryOffset, &outAudioSampleDepth, sizeof(outAudioSampleDepth));
-    dataMemoryOffset += sizeof(outAudioSampleDepth);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outAudioSampleDepth, sizeof(outAudioSampleDepth));
+    dataOffset += sizeof(outAudioSampleDepth);
 
-    memcpy(dataMemory + dataMemoryOffset, &outAudioChannels, sizeof(outAudioChannels));
-    dataMemoryOffset += sizeof(outAudioChannels);
+    memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outAudioChannels, sizeof(outAudioChannels));
+    dataOffset += sizeof(outAudioChannels);
 
-    uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(dataMemory)[0];
+    uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[0];
 
-    if (dataMemoryOffset > *currentOffset)
+    if (dataOffset > *currentOffset)
     {
-        __sync_add_and_fetch(reinterpret_cast<uint32_t*>(dataMemory), dataMemoryOffset - *currentOffset);
+        __sync_add_and_fetch(currentOffset, dataOffset - *currentOffset);
     }
     else
     {
-        __sync_sub_and_fetch(reinterpret_cast<uint32_t*>(dataMemory), *currentOffset - dataMemoryOffset);
+        __sync_sub_and_fetch(currentOffset, *currentOffset - dataOffset);
     }
 
 }
@@ -493,41 +491,42 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             sizeof(stride) +
             sizeof(dataSize) +
             dataSize +
-            dataMemoryOffset > dataMemorySize)
+            headerSize +
+            dataOffset > sharedMemorySize)
         {
-            dataMemoryOffset = 0;
+            dataOffset = headerSize;
         }
 
-        memcpy(dataMemory + dataMemoryOffset, &outTimestamp, sizeof(outTimestamp));
-        dataMemoryOffset += sizeof(outTimestamp);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outTimestamp, sizeof(outTimestamp));
+        dataOffset += sizeof(outTimestamp);
 
-        memcpy(dataMemory + dataMemoryOffset, &outDuration, sizeof(outDuration));
-        dataMemoryOffset += sizeof(outDuration);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outDuration, sizeof(outDuration));
+        dataOffset += sizeof(outDuration);
 
-        memcpy(dataMemory + dataMemoryOffset, &frameWidth, sizeof(frameWidth));
-        dataMemoryOffset += sizeof(frameWidth);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &frameWidth, sizeof(frameWidth));
+        dataOffset += sizeof(frameWidth);
 
-        memcpy(dataMemory + dataMemoryOffset, &frameHeight, sizeof(frameHeight));
-        dataMemoryOffset += sizeof(frameHeight);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &frameHeight, sizeof(frameHeight));
+        dataOffset += sizeof(frameHeight);
 
-        memcpy(dataMemory + dataMemoryOffset, &stride, sizeof(stride));
-        dataMemoryOffset += sizeof(stride);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &stride, sizeof(stride));
+        dataOffset += sizeof(stride);
 
-        memcpy(dataMemory + dataMemoryOffset, &dataSize, sizeof(dataSize));
-        dataMemoryOffset += sizeof(dataSize);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &dataSize, sizeof(dataSize));
+        dataOffset += sizeof(dataSize);
 
-        memcpy(dataMemory + dataMemoryOffset, frameData, dataSize);
-        dataMemoryOffset += dataSize;
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, frameData, dataSize);
+        dataOffset += dataSize;
 
-        uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(dataMemory)[1];
+        uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[1];
 
-        if (dataMemoryOffset > *currentOffset)
+        if (dataOffset > *currentOffset)
         {
-            __sync_add_and_fetch(reinterpret_cast<uint32_t*>(dataMemory), dataMemoryOffset - *currentOffset);
+            __sync_add_and_fetch(currentOffset, dataOffset - *currentOffset);
         }
         else
         {
-            __sync_sub_and_fetch(reinterpret_cast<uint32_t*>(dataMemory), *currentOffset - dataMemoryOffset);
+            __sync_sub_and_fetch(currentOffset, *currentOffset - dataOffset);
         }
     }
 
@@ -548,32 +547,33 @@ bool BMDMemory::videoInputFrameArrived(IDeckLinkVideoInputFrame* videoFrame,
             sizeof(sampleFrameCount) +
             sizeof(dataSize) +
             dataSize +
-            dataMemoryOffset > dataMemorySize)
+            headerSize +
+            dataOffset > sharedMemorySize)
         {
-            dataMemoryOffset = 0;
+            dataOffset = headerSize;
         }
 
-        memcpy(dataMemory + dataMemoryOffset, &outTimestamp, sizeof(outTimestamp));
-        dataMemoryOffset += sizeof(outTimestamp);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &outTimestamp, sizeof(outTimestamp));
+        dataOffset += sizeof(outTimestamp);
 
-        memcpy(dataMemory + dataMemoryOffset, &sampleFrameCount, sizeof(sampleFrameCount));
-        dataMemoryOffset += sizeof(sampleFrameCount);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &sampleFrameCount, sizeof(sampleFrameCount));
+        dataOffset += sizeof(sampleFrameCount);
 
-        memcpy(dataMemory + dataMemoryOffset, &dataSize, sizeof(dataSize));
-        dataMemoryOffset += sizeof(dataSize);
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, &dataSize, sizeof(dataSize));
+        dataOffset += sizeof(dataSize);
 
-        memcpy(dataMemory + dataMemoryOffset, frameData, dataSize);
-        dataMemoryOffset += dataSize;
+        memcpy(reinterpret_cast<uint8_t*>(sharedMemory) + dataOffset, frameData, dataSize);
+        dataOffset += dataSize;
 
-        uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(dataMemory)[2];
+        uint32_t* currentOffset = &reinterpret_cast<uint32_t*>(sharedMemory)[2];
 
-        if (dataMemoryOffset > *currentOffset)
+        if (dataOffset > *currentOffset)
         {
-            __sync_add_and_fetch(reinterpret_cast<uint32_t*>(dataMemory), dataMemoryOffset - *currentOffset);
+            __sync_add_and_fetch(currentOffset, dataOffset - *currentOffset);
         }
         else
         {
-            __sync_sub_and_fetch(reinterpret_cast<uint32_t*>(dataMemory), *currentOffset - dataMemoryOffset);
+            __sync_sub_and_fetch(currentOffset, *currentOffset - dataOffset);
         }
     }
 

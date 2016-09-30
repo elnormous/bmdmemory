@@ -49,9 +49,7 @@ protected:
     uint32_t currentMetaDataOffset = 0;
     uint32_t currentVideoData = 0;
     uint32_t currentAudioData = 0;
-    uint8_t* dataMemory = nullptr;
-    const uint32_t dataMemorySize;
-    uint32_t dataMemoryOffset = 0;
+    uint32_t dataOffset = 0;
 
     InputCallback* inputCallback = nullptr;
 
