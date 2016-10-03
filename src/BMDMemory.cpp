@@ -283,11 +283,60 @@ bool BMDMemory::run()
         return false;
     }
 
-    int displayModeCount = 0;
+    BMDDisplayMode bmdDisplayMode = 0;
+
+    switch (videoMode)
+    {
+        case 0: bmdDisplayMode = bmdModeNTSC; break;
+        case 1: bmdDisplayMode = bmdModeNTSC2398; break;
+        case 2: bmdDisplayMode = bmdModePAL; break;
+        case 14: bmdDisplayMode = bmdModeNTSCp; break;
+        case 15: bmdDisplayMode = bmdModePALp; break;
+
+        case 3: bmdDisplayMode = bmdModeHD1080p2398; break;
+        case 4: bmdDisplayMode = bmdModeHD1080p24; break;
+        case 5: bmdDisplayMode = bmdModeHD1080p25; break;
+        case 6: bmdDisplayMode = bmdModeHD1080p2997; break;
+        case 7: bmdDisplayMode = bmdModeHD1080p30; break;
+        case 8: bmdDisplayMode = bmdModeHD1080i50; break;
+        case 9: bmdDisplayMode = bmdModeHD1080i5994; break;
+        case 10: bmdDisplayMode = bmdModeHD1080i6000; break;
+        case 16: bmdDisplayMode = bmdModeHD1080p50; break;
+        case 17: bmdDisplayMode = bmdModeHD1080p5994; break;
+        case 18: bmdDisplayMode = bmdModeHD1080p6000; break;
+
+        case 11: bmdDisplayMode = bmdModeHD720p50; break;
+        case 12: bmdDisplayMode = bmdModeHD720p5994; break;
+        case 13: bmdDisplayMode = bmdModeHD720p60; break;
+
+        case 19: bmdDisplayMode = bmdMode2k2398; break;
+        case 20: bmdDisplayMode = bmdMode2k24; break;
+        case 21: bmdDisplayMode = bmdMode2k25; break;
+
+        case 22: bmdDisplayMode = bmdMode2kDCI2398; break;
+        case 23: bmdDisplayMode = bmdMode2kDCI24; break;
+        case 24: bmdDisplayMode = bmdMode2kDCI25; break;
+
+        case 25: bmdDisplayMode = bmdMode4K2160p2398; break;
+        case 26: bmdDisplayMode = bmdMode4K2160p24; break;
+        case 27: bmdDisplayMode = bmdMode4K2160p25; break;
+        case 28: bmdDisplayMode = bmdMode4K2160p2997; break;
+        case 29: bmdDisplayMode = bmdMode4K2160p30; break;
+        case 30: bmdDisplayMode = bmdMode4K2160p50; break;
+        case 31: bmdDisplayMode = bmdMode4K2160p5994; break;
+        case 32: bmdDisplayMode = bmdMode4K2160p60; break;
+
+        case 33: bmdDisplayMode = bmdMode4kDCI2398; break;
+        case 34: bmdDisplayMode = bmdMode4kDCI24; break;
+        case 35: bmdDisplayMode = bmdMode4kDCI25; break;
+
+        default: bmdDisplayMode = bmdModeUnknown; break;
+    }
 
     while ((result = displayModeIterator->Next(&displayMode)) == S_OK)
     {
-        if (videoMode == displayModeCount)
+        if (bmdDisplayMode == bmdModeUnknown ||
+            bmdDisplayMode == displayMode->GetDisplayMode())
         {
             // found video mode
             break;
@@ -295,20 +344,12 @@ bool BMDMemory::run()
         else
         {
             displayMode->Release();
-            displayModeCount++;
         }
     }
 
     if (result != S_OK)
     {
         std::cerr << "Failed to get display mode\n";
-        return false;
-    }
-
-    if (displayModeCount != videoMode ||
-        !displayMode)
-    {
-        std::cerr << "Failed to find display mode\n";
         return false;
     }
 
