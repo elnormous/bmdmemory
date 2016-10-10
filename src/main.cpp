@@ -2,9 +2,10 @@
 //  BMD memory
 //
 
+#include <cstdlib>
+#include <cstring>
 #include <thread>
 #include <iostream>
-#include <cstring>
 #include "BMDMemory.h"
 
 int main(int argc, const char* argv[])
@@ -75,7 +76,7 @@ int main(int argc, const char* argv[])
 
     if (!bmdMemory.run())
     {
-        return 1;
+        return EXIT_FAILURE;
     }
 
     for (;;)
@@ -83,5 +84,5 @@ int main(int argc, const char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
