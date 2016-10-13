@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "BMDMemory.h"
+#include "Log.h"
 
 static void signalHandler(int signo)
 {
@@ -30,7 +31,7 @@ static int daemonize(const char* lock_file)
     char str[256] = {0};
     if (pid < 0)
     {
-        std::cerr << "Failed to fork process" << std::endl;
+        Log(Log::Level::ERR) << "Failed to fork process";
         exit(EXIT_FAILURE);
     }
     if (pid > 0) exit(EXIT_SUCCESS); // parent process
@@ -49,13 +50,13 @@ static int daemonize(const char* lock_file)
 
     if (lfp < 0)
     {
-        std::cerr << "Failed to open lock file" << std::endl;
+        Log(Log::Level::ERR) << "Failed to open lock file";
         exit(EXIT_FAILURE);
     }
 
     if (lockf(lfp, F_TLOCK, 0) < 0)
     {
-        std::cerr << "Failed to lock the file" << std::endl;
+        Log(Log::Level::ERR) << "Failed to lock the file";
         exit(EXIT_SUCCESS);
     }
 
@@ -65,25 +66,25 @@ static int daemonize(const char* lock_file)
     // ignore child terminate signal
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
     {
-        std::cerr << "Failed to ignore SIGCHLD" << std::endl;
+        Log(Log::Level::ERR) << "Failed to ignore SIGCHLD";
         exit(EXIT_FAILURE);
     }
 
     // hangup signal
     if (signal(SIGHUP, signalHandler) == SIG_ERR)
     {
-        std::cerr << "Failed to capure SIGHUP" << std::endl;
+        Log(Log::Level::ERR) << "Failed to capure SIGHUP";
         exit(EXIT_FAILURE);
     }
 
     // software termination signal from kill
     if (signal(SIGTERM, signalHandler) == SIG_ERR)
     {
-        std::cerr << "Failed to capure SIGTERM" << std::endl;
+        Log(Log::Level::ERR) << "Failed to capure SIGTERM";
         exit(EXIT_FAILURE);
     }
 
-    std::cout << "Daemon started, pid: " << getpid() << std::endl;
+    Log(Log::Level::INFO) << "Daemon started, pid: " << getpid();
     
     return EXIT_SUCCESS;
 }
@@ -92,10 +93,10 @@ int main(int argc, const char* argv[])
 {
     if (argc < 2)
     {
-        std::cerr << "Too few arguments" << std::endl;
+        Log(Log::Level::ERR) << "Too few arguments";
 
         const char* exe = argc >= 1 ? argv[0] : "bmdmemory";
-        std::cerr << "Usage: " << exe << " <name> [--instance=<instance>] [--video_mode <video mode>] [--video_connection <video connection>] [--video_format <video format>] [--audio_connection <audio connection>] [--memory_size <memory size>] [--daemon]" << std::endl;
+        Log(Log::Level::INFO) << "Usage: " << exe << " <name> [--instance=<instance>] [--video_mode <video mode>] [--video_connection <video connection>] [--video_format <video format>] [--audio_connection <audio connection>] [--memory_size <memory size>] [--daemon]";
 
         return 1;
     }
@@ -116,35 +117,35 @@ int main(int argc, const char* argv[])
             if (++i < argc)
                 instance = atoi(argv[i]);
             else
-                std::cerr << "Invalid argument" << std::endl;
+                Log(Log::Level::ERR) << "Invalid argument";
         }
         else if (strcmp(argv[i], "--video_mode") == 0)
         {
             if (++i < argc)
                 videoMode = atoi(argv[i]);
             else
-                std::cerr << "Invalid argument" << std::endl;
+                Log(Log::Level::ERR) << "Invalid argument";
         }
         else if (strcmp(argv[i], "--video_connection") == 0)
         {
             if (++i < argc)
                 videoConnection = atoi(argv[i]);
             else
-                std::cerr << "Invalid argument" << std::endl;
+                Log(Log::Level::ERR) << "Invalid argument";
         }
         else if (strcmp(argv[i], "--video_format") == 0)
         {
             if (++i < argc)
                 videoFormat = atoi(argv[i]);
             else
-                std::cerr << "Invalid argument" << std::endl;
+                Log(Log::Level::ERR) << "Invalid argument";
         }
         else if (strcmp(argv[i], "--audio_connection") == 0)
         {
             if (++i < argc)
                 audioConnection = atoi(argv[i]);
             else
-                std::cerr << "Invalid argument" << std::endl;
+                Log(Log::Level::ERR) << "Invalid argument";
         }
         else if (strcmp(argv[i], "--daemon") == 0)
         {
@@ -154,7 +155,7 @@ int main(int argc, const char* argv[])
 
     if (daemon && daemonize("/var/run/bmdmemory.pid") == -1)
     {
-        std::cerr << "Failed to start daemon" << std::endl;
+        Log(Log::Level::ERR) << "Failed to start daemon";
         return EXIT_FAILURE;
     }
 

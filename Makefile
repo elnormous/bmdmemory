@@ -10,7 +10,7 @@ else
     endif
 endif
 
-CXXFLAGS=-c -std=c++11 -Wall -I $(SDK_PATH)
+CXXFLAGS=-c -std=c++11 -Wall -DLOG_SYSLOG -I $(SDK_PATH)
 LDFLAGS=-lpthread -ldl
 
 ifndef SDK_PATH

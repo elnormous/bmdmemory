@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <cstring>
 #include "BMDMemory.h"
+#include "Log.h"
 
 class InputCallback:public IDeckLinkInputCallback
 {
@@ -122,7 +123,7 @@ BMDMemory::~BMDMemory()
     {
         if (close(sharedMemoryFd) == -1)
         {
-            std::cerr << "Failed to close shared memory file descriptor\n";
+            Log(Log::Level::ERR) << "Failed to close shared memory file descriptor";
         }
     }
 
@@ -130,13 +131,13 @@ BMDMemory::~BMDMemory()
     {
         if (munmap(sharedMemory, sharedMemorySize) == -1)
         {
-            std::cerr << "Failed to unmap shared memory\n";
+            Log(Log::Level::ERR) << "Failed to unmap shared memory";
         }
     }
 
     if (shm_unlink(name.c_str()) == -1)
     {
-        std::cerr << "Failed to delete shared memory\n";
+        Log(Log::Level::ERR) << "Failed to delete shared memory";
     }
 }
 
@@ -146,13 +147,13 @@ bool BMDMemory::run()
 
     if ((sharedMemoryFd = shm_open(name.c_str(), O_CREAT | O_EXCL | O_RDWR , S_IRUSR | S_IWUSR)) == -1)
     {
-        std::cerr << "Failed to create shared memory\n";
+        Log(Log::Level::ERR) << "Failed to create shared memory";
         return false;
     }
 
     if (ftruncate(sharedMemoryFd, sharedMemorySize) == -1)
     {
-        std::cerr << "Failed to resize shared memory\n";
+        Log(Log::Level::ERR) << "Failed to resize shared memory";
         return false;
     }
 
@@ -160,7 +161,7 @@ bool BMDMemory::run()
 
     if (sharedMemory == MAP_FAILED)
     {
-        std::cerr << "Failed to map shared memory\n";
+        Log(Log::Level::ERR) << "Failed to map shared memory";
         return false;
     }
 
@@ -171,7 +172,7 @@ bool BMDMemory::run()
 
     if (!deckLinkIterator)
     {
-        std::cerr << "This application requires the DeckLink drivers installed\n";
+        Log(Log::Level::ERR) << "This application requires the DeckLink drivers installed";
         return false;
     }
 
@@ -195,14 +196,14 @@ bool BMDMemory::run()
 
     if (result != S_OK)
     {
-        std::cerr << "Failed to get DeckLink PCI card\n";
+        Log(Log::Level::ERR) << "Failed to get DeckLink PCI card";
         return false;
     }
 
     if (instance != instanceCount ||
         !deckLink)
     {
-        std::cerr << "DeckLink PCI card not found\n";
+        Log(Log::Level::ERR) << "DeckLink PCI card not found";
         return false;
     }
 
@@ -217,7 +218,7 @@ bool BMDMemory::run()
                                       reinterpret_cast<void**>(&deckLinkConfiguration));
     if (result != S_OK)
     {
-        std::cerr << "Failed to obtain the IDeckLinkConfiguration interface - result = " << result << "\n";
+        Log(Log::Level::ERR) << "Failed to obtain the IDeckLinkConfiguration interface - result = " << result;
         return false;
     }
 
@@ -238,7 +239,7 @@ bool BMDMemory::run()
 
     if (result != S_OK)
     {
-        std::cerr << "Failed to set declick audio configuration" << "\n";
+        Log(Log::Level::ERR) << "Failed to set declick audio configuration";
         return false;
     }
 
@@ -267,7 +268,7 @@ bool BMDMemory::run()
     
     if (result != S_OK)
     {
-        std::cerr << "Failed to set declick video configuration" << "\n";
+        Log(Log::Level::ERR) << "Failed to set declick video configuration";
         return false;
     }
 
@@ -279,7 +280,7 @@ bool BMDMemory::run()
     result = deckLinkInput->GetDisplayModeIterator(&displayModeIterator);
     if (result != S_OK)
     {
-        std::cerr << "Failed to obtain the video output display mode iterator - result = " << result << "\n";
+        Log(Log::Level::ERR) << "Failed to obtain the video output display mode iterator - result = " << result;
         return false;
     }
 
@@ -349,7 +350,7 @@ bool BMDMemory::run()
 
     if (result != S_OK)
     {
-        std::cerr << "Failed to get display mode\n";
+        Log(Log::Level::ERR) << "Failed to get display mode";
         return false;
     }
 
@@ -360,7 +361,7 @@ bool BMDMemory::run()
     displayMode->GetFrameRate(&frameDuration, &timeScale);
     fieldDominance = displayMode->GetFieldDominance();
 
-    std::cout << "width: " << width << ", height: " << height << ", frameDuration: " << frameDuration << ", timeScale: " << timeScale << "\n";
+    Log(Log::Level::INFO) << "width: " << width << ", height: " << height << ", frameDuration: " << frameDuration << ", timeScale: " << timeScale;
 
     switch (videoFormat)
     {
@@ -374,7 +375,7 @@ bool BMDMemory::run()
     result = deckLinkInput->EnableVideoInput(selectedDisplayMode, pixelFormat, 0);
     if (result != S_OK)
     {
-        std::cerr << "Failed to enable video input\n";
+        Log(Log::Level::ERR) << "Failed to enable video input";
         return false;
     }
 
@@ -382,11 +383,11 @@ bool BMDMemory::run()
                                              audioSampleDepth,
                                              audioChannels);
 
-    std::cout << "audioSampleRate: " << audioSampleRate << ", audioSampleDepth: " << audioSampleDepth << ", audioChannels: " << audioChannels << "\n";
+    Log(Log::Level::INFO) << "audioSampleRate: " << audioSampleRate << ", audioSampleDepth: " << audioSampleDepth << ", audioChannels: " << audioChannels;
 
     if (result != S_OK)
     {
-        std::cerr << "Failed to enable audio input\n";
+        Log(Log::Level::ERR) << "Failed to enable audio input";
         return false;
     }
 
@@ -395,11 +396,11 @@ bool BMDMemory::run()
     result = deckLinkInput->StartStreams();
     if (result != S_OK)
     {
-        std::cerr << "Failed to start streaming\n";
+        Log(Log::Level::ERR) << "Failed to start streaming";
         return false;
     }
 
-    std::cout << "Streaming started\n";
+    Log(Log::Level::INFO) << "Streaming started";
 
     return true;
 }

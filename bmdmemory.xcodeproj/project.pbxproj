@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3030D51A1DAFA155007CC8EB /* Log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3030D5181DAFA155007CC8EB /* Log.cpp */; };
 		308491B11D5CCE4A00B7C515 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 308491B01D5CCE4A00B7C515 /* main.cpp */; };
 		308491EB1D5CCFF200B7C515 /* DeckLinkAPIDispatch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 308491E31D5CCFF200B7C515 /* DeckLinkAPIDispatch.cpp */; };
 		308491EF1D5CD03100B7C515 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 308491EE1D5CD03100B7C515 /* CoreFoundation.framework */; };
@@ -27,6 +28,8 @@
 
 /* Begin PBXFileReference section */
 		300934091C873DF200CC50D3 /* bmdmemory */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = bmdmemory; sourceTree = BUILT_PRODUCTS_DIR; };
+		3030D5181DAFA155007CC8EB /* Log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Log.cpp; sourceTree = "<group>"; };
+		3030D5191DAFA155007CC8EB /* Log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Log.h; sourceTree = "<group>"; };
 		308491B01D5CCE4A00B7C515 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		308491D11D5CCFF200B7C515 /* DeckLinkAPI_v7_1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DeckLinkAPI_v7_1.h; sourceTree = "<group>"; };
 		308491D21D5CCFF200B7C515 /* DeckLinkAPI_v7_3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DeckLinkAPI_v7_3.h; sourceTree = "<group>"; };
@@ -91,6 +94,8 @@
 			children = (
 				308492071D5E138400B7C515 /* BMDMemory.cpp */,
 				308492081D5E138400B7C515 /* BMDMemory.h */,
+				3030D5181DAFA155007CC8EB /* Log.cpp */,
+				3030D5191DAFA155007CC8EB /* Log.h */,
 				308491B01D5CCE4A00B7C515 /* main.cpp */,
 			);
 			name = bmdsplit;
@@ -194,6 +199,7 @@
 			files = (
 				308492091D5E138400B7C515 /* BMDMemory.cpp in Sources */,
 				308491B11D5CCE4A00B7C515 /* main.cpp in Sources */,
+				3030D51A1DAFA155007CC8EB /* Log.cpp in Sources */,
 				308491EB1D5CCFF200B7C515 /* DeckLinkAPIDispatch.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -234,8 +240,9 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
 					"$(inherited)",
+					"DEBUG=1",
+					LOG_SYSLOG,
 				);
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_INCOMPATIBLE_POINTER_TYPE_WARNINGS_AS_ERRORS = YES;
@@ -291,6 +298,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = LOG_SYSLOG;
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_INCOMPATIBLE_POINTER_TYPE_WARNINGS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
