@@ -27,7 +27,8 @@ endif
 
 SOURCES=$(SDK_PATH)/DeckLinkAPIDispatch.cpp \
 	src/main.cpp \
-	src/BMDMemory.cpp
+	src/BMDMemory.cpp \
+	src/Log.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
 BINDIR=./bin
