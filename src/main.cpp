@@ -89,6 +89,36 @@ static int daemonize(const char* lock_file)
     return EXIT_SUCCESS;
 }
 
+static int killDaemon(const char* lockFile)
+{
+    char pidStr[11];
+    memset(pidStr, 0, sizeof(pidStr));
+
+    int lfp = open(lockFile, O_RDONLY);
+
+    if (lfp == -1)
+    {
+        Log(Log::Level::ERR) << "Failed to open lock file";
+        return 0;
+    }
+
+    read(lfp, pidStr, sizeof(pidStr));
+
+    pid_t pid = atoi(pidStr);
+
+    if (kill(pid, SIGTERM) != 0)
+    {
+        Log(Log::Level::ERR) << "Failed to kill daemon";
+        return 0;
+    }
+
+    close(lfp);
+
+    Log(Log::Level::INFO) << "Daemon killed";
+    
+    return pid;
+}
+
 int main(int argc, const char* argv[])
 {
     if (argc < 2)
@@ -150,6 +180,17 @@ int main(int argc, const char* argv[])
         else if (strcmp(argv[i], "--daemon") == 0)
         {
             daemon = true;
+        }
+        else if (strcmp(argv[i], "--kill-daemon") == 0)
+        {
+            if (killDaemon("/var/run/bmdmemory.pid"))
+            {
+                return EXIT_SUCCESS;
+            }
+            else
+            {
+                return EXIT_FAILURE;
+            }
         }
     }
 
