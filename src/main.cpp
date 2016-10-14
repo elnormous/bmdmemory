@@ -126,7 +126,7 @@ int main(int argc, const char* argv[])
         Log(Log::Level::ERR) << "Too few arguments";
 
         const char* exe = argc >= 1 ? argv[0] : "bmdmemory";
-        Log(Log::Level::INFO) << "Usage: " << exe << " <name> [--instance=<instance>] [--video_mode <video mode>] [--video_connection <video connection>] [--video_format <video format>] [--audio_connection <audio connection>] [--memory_size <memory size>] [--daemon]";
+        Log(Log::Level::INFO) << "Usage: " << exe << " <name> [--instance=<instance>] [--video_mode <video mode>] [--video_connection <video connection>] [--video_format <video format>] [--audio_connection <audio connection>] [--memory_size <memory size>] [--daemon] [--killdaemon]";
 
         return 1;
     }
