@@ -34,9 +34,10 @@ OBJECTS=$(SOURCES:.cpp=.o)
 BINDIR=./bin
 EXECUTABLE=bmdmemory
 
+all: CXXFLAGS+=-Os
 all: directories $(SOURCES) $(EXECUTABLE)
 
-debug: CXXFLAGS+=-DDEBUG -g
+debug: CXXFLAGS+=-DDEBUG -g -O0
 debug: directories $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)

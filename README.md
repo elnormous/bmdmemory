@@ -1,4 +1,4 @@
-# BMD memory
+# BMD memory v0.1
 
 [![Build Status](https://api.travis-ci.org/elnormous/bmdmemory.svg?branch=master)](https://travis-ci.org/elnormous/bmdmemory)
 

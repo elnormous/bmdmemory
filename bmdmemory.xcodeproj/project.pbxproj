@@ -30,6 +30,7 @@
 		300934091C873DF200CC50D3 /* bmdmemory */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = bmdmemory; sourceTree = BUILT_PRODUCTS_DIR; };
 		3030D5181DAFA155007CC8EB /* Log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Log.cpp; sourceTree = "<group>"; };
 		3030D5191DAFA155007CC8EB /* Log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Log.h; sourceTree = "<group>"; };
+		3030D66E1DB6750D007CC8EB /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		308491B01D5CCE4A00B7C515 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		308491D11D5CCFF200B7C515 /* DeckLinkAPI_v7_1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DeckLinkAPI_v7_1.h; sourceTree = "<group>"; };
 		308491D21D5CCFF200B7C515 /* DeckLinkAPI_v7_3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DeckLinkAPI_v7_3.h; sourceTree = "<group>"; };
@@ -97,6 +98,7 @@
 				3030D5181DAFA155007CC8EB /* Log.cpp */,
 				3030D5191DAFA155007CC8EB /* Log.h */,
 				308491B01D5CCE4A00B7C515 /* main.cpp */,
+				3030D66E1DB6750D007CC8EB /* Constants.h */,
 			);
 			name = bmdsplit;
 			path = src;

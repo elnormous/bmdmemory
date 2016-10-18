@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "Constants.h"
 #include "BMDMemory.h"
 #include "Log.h"
 
@@ -199,6 +200,11 @@ int main(int argc, const char* argv[])
             {
                 return EXIT_FAILURE;
             }
+        }
+        else if (strcmp(argv[i], "--version") == 0)
+        {
+            Log(Log::Level::INFO) << "BMDMemory v" << static_cast<uint32_t>(BMD_MEMORY_VERSION[0]) << "." << static_cast<uint32_t>(BMD_MEMORY_VERSION[1]);
+            return EXIT_SUCCESS;
         }
     }
 
