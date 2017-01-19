@@ -43,7 +43,7 @@ debug: directories $(SOURCES) $(EXECUTABLE)
 $(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(OBJECTS) $(LDFLAGS) -o $(BINDIR)/$@
 
-.cpp.o:
+%.o: %.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 prefix=/usr/bin
